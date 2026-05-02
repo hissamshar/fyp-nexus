@@ -64,6 +64,17 @@ mvn clean compile
 mvn javafx:run
 ```
 
+## 📥 Downloading the Pre-compiled Binary (Releases)
+
+If you don't want to build the project from source, you can simply download the ready-to-use application from the GitHub Releases page.
+
+1. Navigate to the [Releases](https://github.com/hissamshar/fyp-nexus/releases) page of this repository.
+2. Download the `.zip` file corresponding to your Operating System (e.g., `FYPPlatform-Linux-x64.zip`).
+3. Extract the downloaded zip file to your preferred location.
+4. Open the extracted folder and run the executable file inside the `bin/` directory (e.g., `./bin/FYPPlatform`).
+
+*No Java or Maven installation is required to run the pre-compiled binary!*
+
 ## 📦 Creating a Native Standalone Binary
 
 You can generate a standalone, self-contained native executable (e.g., a `.exe` for Windows, `.app` for macOS, or binary folder for Linux) that doesn't require users to install Java or Maven.
