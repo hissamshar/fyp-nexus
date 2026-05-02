@@ -7,7 +7,17 @@ echo "----------------------------------------------------"
 
 # 1. Ensure project is built and JAR is generated
 echo "🛠️  Packaging project into a Fat JAR..."
-./run.sh clean package -DskipTests
+MAVEN_VERSION="3.9.6"
+LOCAL_MVN="$HOME/.local/apache-maven-$MAVEN_VERSION/bin/mvn"
+if command -v mvn &> /dev/null; then
+    MVN_CMD="mvn"
+elif [ -f "$LOCAL_MVN" ]; then
+    MVN_CMD="$LOCAL_MVN"
+else
+    echo "❌ Error: Maven is not installed. Run ./run.sh first to install it."
+    exit 1
+fi
+"$MVN_CMD" clean package -DskipTests
 
 # 2. Check for the generated JAR
 JAR_FILE="target/fyp-management-platform-1.0.0.jar"
