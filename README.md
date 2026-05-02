@@ -26,7 +26,7 @@ Before running this project, you will need:
 
 ### 1. Clone the repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/hissamshar/fyp-nexus
 cd fyp-management-platform
 ```
 
