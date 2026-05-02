@@ -1,0 +1,19 @@
+# Database Configuration
+db.url=jdbc:postgresql://db.mwoqposmpqftonmzfnsj.supabase.co:6543/postgres?sslmode=require
+db.user=postgres
+db.password=YOUR_SUPABASE_DB_PASSWORD_HERE
+
+# Email (SMTP) Configuration
+mail.host=smtp.gmail.com
+mail.port=587
+mail.user=your-email@gmail.com
+mail.password=your-app-password-here
+mail.from=noreply@fyp-platform.edu.pk
+
+# App Configuration
+app.name=FYP Management Platform
+app.version=1.0.0
+app.session.timeout.minutes=30
+app.upload.dir=/home/hisam/SDA_PROJECT/fyp-management-platform/uploads
+app.max.file.size.mb=50
+app.supervisor.max.students=5

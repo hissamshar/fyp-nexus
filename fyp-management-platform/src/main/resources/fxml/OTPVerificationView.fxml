@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.fyp.controller.OTPVerificationController"
+           styleClass="root-pane" prefWidth="1100" prefHeight="700">
+    <VBox styleClass="login-bg" alignment="CENTER">
+        <VBox styleClass="login-card" alignment="CENTER" spacing="20" maxWidth="440">
+            <Label text="Verify Your Email" styleClass="login-logo"/>
+            <Label fx:id="instructionLabel" text="Enter the 6-digit code sent to your email."
+                   styleClass="login-subtitle" wrapText="true" textAlignment="CENTER"/>
+            <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="360"/>
+
+            <TextField fx:id="otpField" promptText="000000" styleClass="text-field-dark otp-field"
+                       maxWidth="200" id="otpInputField"/>
+
+            <Button fx:id="verifyBtn" text="Verify" styleClass="btn-primary"
+                    maxWidth="360" prefHeight="44" onAction="#handleVerify" id="otpVerifyBtn"/>
+
+            <Hyperlink text="Resend code" onAction="#handleResend"
+                       styleClass="link-text" id="otpResendLink"/>
+
+            <ProgressIndicator fx:id="loadingIndicator" visible="false" prefWidth="32" prefHeight="32"/>
+
+            <Hyperlink text="← Back to login" onAction="#handleBack" styleClass="link-text"/>
+        </VBox>
+    </VBox>
+</StackPane>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.fyp.controller.SupervisorDashboardController"
+            styleClass="root-pane" prefWidth="1200" prefHeight="750">
+    <top>
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT">
+            <Label text="FYP Platform" styleClass="top-bar-logo"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="userNameLabel" styleClass="top-bar-user"/>
+            <Button fx:id="notifBtn" styleClass="notif-btn" onAction="#openNotifications" id="supNotifBtn">
+                <graphic><StackPane><Label text="🔔" style="-fx-font-size:18;"/><Label fx:id="notifBadge" styleClass="notif-badge" text="0"/></StackPane></graphic>
+            </Button>
+            <Button text="Logout" styleClass="btn-outline-small" onAction="#handleLogout" id="supLogoutBtn"/>
+        </HBox>
+    </top>
+    <left>
+        <VBox styleClass="sidebar" spacing="4" prefWidth="210">
+            <Label text="SUPERVISOR MENU" styleClass="sidebar-section-label"/>
+            <Button text="🏠  Dashboard"        styleClass="sidebar-btn sidebar-btn-active" onAction="#showDashboard"   id="supNavDash"/>
+            <Button text="📋  Pending Proposals" styleClass="sidebar-btn" onAction="#showProposals"   id="supNavProposals"/>
+            <Button text="📁  My Projects"       styleClass="sidebar-btn" onAction="#showProjects"    id="supNavProjects"/>
+            <Button text="🎯  Milestones"         styleClass="sidebar-btn" onAction="#showMilestones"  id="supNavMilestones"/>
+            <Button text="💬  Feedback"           styleClass="sidebar-btn" onAction="#showFeedback"    id="supNavFeedback"/>
+            <Button text="📅  Meetings"           styleClass="sidebar-btn" onAction="#showMeetings"    id="supNavMeetings"/>
+            <Button text="💬  Discussion"         styleClass="sidebar-btn" onAction="#showDiscussion"  id="supNavDiscussion"/>
+            <Button text="🏆  Grading"            styleClass="sidebar-btn" onAction="#showGrading"     id="supNavGrading"/>
+            <Button text="👤  Profile"            styleClass="sidebar-btn" onAction="#showProfile"     id="supNavProfile"/>
+            <Region VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+    <center>
+        <StackPane fx:id="contentPane" styleClass="content-pane">
+            <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+                <VBox spacing="24" styleClass="dashboard-content">
+                    <Label fx:id="welcomeLabel" text="Supervisor Dashboard" styleClass="page-title"/>
+                    <HBox spacing="16">
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="Pending Reviews" styleClass="stat-label"/><Label fx:id="pendingLabel" text="0" styleClass="stat-value"/></VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="Active Projects"  styleClass="stat-label"/><Label fx:id="projectsLabel" text="0" styleClass="stat-value"/></VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="Slots Available"  styleClass="stat-label"/><Label fx:id="slotsLabel"    text="0" styleClass="stat-value"/></VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS"><Label text="Upcoming Meetings" styleClass="stat-label"/><Label fx:id="meetLabel"    text="0" styleClass="stat-value"/></VBox>
+                    </HBox>
+                    <VBox styleClass="content-card" spacing="12">
+                        <Label text="Pending Proposals" styleClass="card-title"/>
+                        <TableView fx:id="proposalsTable" prefHeight="250" styleClass="dark-table">
+                            <columns>
+                                <TableColumn fx:id="propTitleCol"   text="Title"    prefWidth="280"/>
+                                <TableColumn fx:id="propStudentCol" text="Student"  prefWidth="160"/>
+                                <TableColumn fx:id="propDateCol"    text="Submitted" prefWidth="120"/>
+                                <TableColumn fx:id="propActionCol"  text="Action"   prefWidth="120"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </StackPane>
+    </center>
+</BorderPane>

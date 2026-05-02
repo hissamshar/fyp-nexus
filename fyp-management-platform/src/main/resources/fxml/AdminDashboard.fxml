@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.fyp.controller.AdminDashboardController"
+            styleClass="root-pane" prefWidth="1200" prefHeight="750">
+    <top>
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT">
+            <Label text="FYP Platform" styleClass="top-bar-logo"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="userNameLabel" styleClass="top-bar-user"/>
+            <Button text="Logout" styleClass="btn-outline-small" onAction="#handleLogout" id="adminLogoutBtn"/>
+        </HBox>
+    </top>
+    <left>
+        <VBox styleClass="sidebar" spacing="4" prefWidth="210">
+            <Label text="ADMIN MENU" styleClass="sidebar-section-label"/>
+            <Button text="🏠  Dashboard"     styleClass="sidebar-btn sidebar-btn-active" onAction="#showDashboard"   id="adminNavDash"/>
+            <Button text="👥  User Management" styleClass="sidebar-btn" onAction="#showUsers"       id="adminNavUsers"/>
+            <Button text="📅  Deadlines"      styleClass="sidebar-btn" onAction="#showDeadlines"    id="adminNavDeadlines"/>
+            <Button text="📊  Analytics"      styleClass="sidebar-btn" onAction="#showAnalytics"    id="adminNavAnalytics"/>
+            <Button text="📄  Reports"        styleClass="sidebar-btn" onAction="#showReports"      id="adminNavReports"/>
+            <Button text="🔐  Audit Logs"     styleClass="sidebar-btn" onAction="#showAuditLogs"    id="adminNavAudit"/>
+            <Button text="🏭  Industry"       styleClass="sidebar-btn" onAction="#showIndustry"     id="adminNavIndustry"/>
+            <Button text="📚  Repository"     styleClass="sidebar-btn" onAction="#showRepository"   id="adminNavRepo"/>
+            <Button text="👤  Profile"        styleClass="sidebar-btn" onAction="#showProfile"      id="adminNavProfile"/>
+            <Region VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+    <center>
+        <StackPane fx:id="contentPane" styleClass="content-pane">
+            <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+                <VBox spacing="24" styleClass="dashboard-content">
+                    <Label text="System Overview" styleClass="page-title"/>
+                    <HBox spacing="16">
+                        <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS"><Label text="Total Users"    styleClass="stat-label"/><Label fx:id="totalUsersLabel"    text="0" styleClass="stat-value"/></VBox>
+                        <VBox styleClass="stat-card stat-card-blue"   HBox.hgrow="ALWAYS"><Label text="Active Projects" styleClass="stat-label"/><Label fx:id="activeProjectsLabel" text="0" styleClass="stat-value"/></VBox>
+                        <VBox styleClass="stat-card stat-card-teal"   HBox.hgrow="ALWAYS"><Label text="Pending Reviews" styleClass="stat-label"/><Label fx:id="pendingLabel"       text="0" styleClass="stat-value"/></VBox>
+                        <VBox styleClass="stat-card stat-card-orange" HBox.hgrow="ALWAYS"><Label text="Completed"       styleClass="stat-label"/><Label fx:id="completedLabel"     text="0" styleClass="stat-value"/></VBox>
+                    </HBox>
+                    <HBox spacing="16">
+                        <VBox styleClass="content-card" HBox.hgrow="ALWAYS" spacing="12">
+                            <Label text="Recent Audit Logs" styleClass="card-title"/>
+                            <TableView fx:id="auditTable" prefHeight="250" styleClass="dark-table">
+                                <columns>
+                                    <TableColumn fx:id="auditActionCol" text="Action"    prefWidth="160"/>
+                                    <TableColumn fx:id="auditTimeCol"   text="Timestamp" prefWidth="160"/>
+                                    <TableColumn fx:id="auditIpCol"     text="IP"        prefWidth="120"/>
+                                    <TableColumn fx:id="auditDetailCol" text="Details"   prefWidth="200"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </ScrollPane>
+        </StackPane>
+    </center>
+</BorderPane>

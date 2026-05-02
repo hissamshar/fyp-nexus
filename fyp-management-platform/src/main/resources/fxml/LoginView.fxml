@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.fyp.controller.LoginController"
+           styleClass="root-pane" prefWidth="1100" prefHeight="700">
+
+    <!-- Background gradient overlay -->
+    <VBox styleClass="login-bg" alignment="CENTER" spacing="0">
+
+        <!-- Glass card -->
+        <VBox styleClass="login-card" alignment="CENTER" spacing="20" maxWidth="440">
+            <!-- Logo / Title -->
+            <VBox alignment="CENTER" spacing="6">
+                <Label text="FYP" styleClass="login-logo"/>
+                <Label text="Management Platform" styleClass="login-subtitle"/>
+                <Label text="FAST NUCES Peshawar" styleClass="login-university"/>
+            </VBox>
+
+            <Separator styleClass="card-separator"/>
+
+            <!-- Error label -->
+            <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="360"/>
+
+            <!-- Email -->
+            <VBox spacing="6" maxWidth="360">
+                <Label text="Institutional Email" styleClass="field-label"/>
+                <TextField fx:id="emailField" promptText="yourname@nu.edu.pk"
+                           styleClass="text-field-dark" id="loginEmailField"/>
+            </VBox>
+
+            <!-- Password -->
+            <VBox spacing="6" maxWidth="360">
+                <Label text="Password" styleClass="field-label"/>
+                <PasswordField fx:id="passwordField" promptText="Enter your password"
+                               styleClass="text-field-dark" id="loginPasswordField"/>
+            </VBox>
+
+            <!-- Login button -->
+            <Button fx:id="loginBtn" text="Sign In" styleClass="btn-primary"
+                    maxWidth="360" prefHeight="44"
+                    onAction="#handleLogin" id="loginSubmitBtn"/>
+
+            <!-- Links -->
+            <HBox alignment="CENTER" spacing="20">
+                <Hyperlink text="Forgot password?" onAction="#handleForgotPassword"
+                           styleClass="link-text" id="forgotPasswordLink"/>
+                <Hyperlink text="Create account" onAction="#handleRegister"
+                           styleClass="link-text" id="registerLink"/>
+            </HBox>
+
+            <!-- Loading indicator -->
+            <ProgressIndicator fx:id="loadingIndicator" visible="false" prefWidth="32" prefHeight="32"/>
+        </VBox>
+    </VBox>
+</StackPane>

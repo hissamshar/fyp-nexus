@@ -1,0 +1,21 @@
+# Sensitive config
+config.properties
+uploads/
+
+# Maven
+target/
+*.class
+*.jar
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven local install (not needed in repo)
+apache-maven-*/

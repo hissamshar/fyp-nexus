@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.fyp.controller.RegisterController"
+           styleClass="root-pane" prefWidth="1100" prefHeight="750">
+
+    <VBox styleClass="login-bg" alignment="CENTER" spacing="0">
+        <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+            <VBox alignment="CENTER" spacing="0">
+                <VBox styleClass="login-card" alignment="CENTER" spacing="16" maxWidth="500">
+                    <Label text="Create Account" styleClass="login-logo"/>
+                    <Label text="FYP Management Platform" styleClass="login-subtitle"/>
+
+                    <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="420"/>
+
+                    <GridPane hgap="12" vgap="12" maxWidth="420">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
+
+                        <Label text="Full Name" styleClass="field-label" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <TextField fx:id="nameField" promptText="Your full name"
+                                   styleClass="text-field-dark" id="regNameField"
+                                   GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+
+                        <Label text="Role" styleClass="field-label" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                        <ComboBox fx:id="roleCombo" styleClass="combo-dark" maxWidth="Infinity"
+                                  id="regRoleCombo"
+                                  GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                        <Label text="Institutional Email" styleClass="field-label"
+                               GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2"/>
+                        <TextField fx:id="emailField" promptText="yourname@nu.edu.pk"
+                                   styleClass="text-field-dark" id="regEmailField"
+                                   GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"/>
+
+                        <Label text="Password" styleClass="field-label"
+                               GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                        <PasswordField fx:id="passwordField" promptText="Min 8 chars, upper+lower+digit+special"
+                                       styleClass="text-field-dark" id="regPasswordField"
+                                       GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+
+                        <Label text="Confirm Password" styleClass="field-label"
+                               GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                        <PasswordField fx:id="confirmPasswordField" promptText="Repeat password"
+                                       styleClass="text-field-dark" id="regConfirmPasswordField"
+                                       GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+
+                        <!-- Conditional fields shown based on role -->
+                        <Label text="Department (Students)" styleClass="field-label"
+                               GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                        <TextField fx:id="departmentField" promptText="e.g. Computer Science"
+                                   styleClass="text-field-dark" id="regDepartmentField"
+                                   GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+
+                        <Label text="Company (Industry Partner)" styleClass="field-label"
+                               GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+                        <TextField fx:id="companyField" promptText="e.g. Acme Corp"
+                                   styleClass="text-field-dark" id="regCompanyField"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+                    </GridPane>
+
+                    <CheckBox fx:id="privacyCheck" text="I accept the Privacy Policy and Terms of Service"
+                              styleClass="check-dark" id="regPrivacyCheck"/>
+
+                    <Button fx:id="registerBtn" text="Create Account" styleClass="btn-primary"
+                            maxWidth="420" prefHeight="44" onAction="#handleRegister" id="regSubmitBtn"/>
+
+                    <ProgressIndicator fx:id="loadingIndicator" visible="false" prefWidth="32" prefHeight="32"/>
+
+                    <Hyperlink text="Already have an account? Sign in" onAction="#handleLogin"
+                               styleClass="link-text" id="regLoginLink"/>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </VBox>
+</StackPane>

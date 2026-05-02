@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.fyp.controller.StudentDashboardController"
+            styleClass="root-pane" prefWidth="1200" prefHeight="750">
+
+    <!-- TOP BAR -->
+    <top>
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="0">
+            <Label text="FYP Platform" styleClass="top-bar-logo"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="userNameLabel" styleClass="top-bar-user"/>
+            <Button fx:id="notifBtn" styleClass="notif-btn" onAction="#openNotifications" id="notifBellBtn">
+                <graphic>
+                    <StackPane>
+                        <Label text="🔔" style="-fx-font-size:18;"/>
+                        <Label fx:id="notifBadge" styleClass="notif-badge" text="0"/>
+                    </StackPane>
+                </graphic>
+            </Button>
+            <Button text="Logout" styleClass="btn-outline-small" onAction="#handleLogout" id="logoutBtn"/>
+        </HBox>
+    </top>
+
+    <!-- LEFT SIDEBAR -->
+    <left>
+        <VBox styleClass="sidebar" spacing="4" prefWidth="210">
+            <Label text="STUDENT MENU" styleClass="sidebar-section-label"/>
+            <Button text="🏠  Dashboard"       styleClass="sidebar-btn sidebar-btn-active" onAction="#showDashboard"    id="navDashboard"/>
+            <Button text="📄  My Proposals"    styleClass="sidebar-btn" onAction="#showProposals"     id="navProposals"/>
+            <Button text="🎯  Milestones"      styleClass="sidebar-btn" onAction="#showMilestones"    id="navMilestones"/>
+            <Button text="📁  Deliverables"    styleClass="sidebar-btn" onAction="#showDeliverables"  id="navDeliverables"/>
+            <Button text="📊  Progress Report" styleClass="sidebar-btn" onAction="#showProgressReport" id="navProgress"/>
+            <Button text="💬  Discussion"      styleClass="sidebar-btn" onAction="#showDiscussion"    id="navDiscussion"/>
+            <Button text="📅  Meetings"        styleClass="sidebar-btn" onAction="#showMeetings"      id="navMeetings"/>
+            <Button text="🏆  My Grades"       styleClass="sidebar-btn" onAction="#showGrades"        id="navGrades"/>
+            <Button text="🏭  Industry Probs"  styleClass="sidebar-btn" onAction="#showIndustry"      id="navIndustry"/>
+            <Button text="👤  Profile"         styleClass="sidebar-btn" onAction="#showProfile"       id="navProfile"/>
+            <Region VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+
+    <!-- CENTER CONTENT -->
+    <center>
+        <StackPane fx:id="contentPane" styleClass="content-pane">
+            <!-- Default dashboard content -->
+            <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+                <VBox spacing="24" styleClass="dashboard-content">
+                    <Label fx:id="welcomeLabel" text="Welcome back!" styleClass="page-title"/>
+
+                    <!-- Stats row -->
+                    <HBox spacing="16">
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <Label text="My Proposals" styleClass="stat-label"/>
+                            <Label fx:id="proposalCountLabel" text="0" styleClass="stat-value"/>
+                        </VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <Label text="Active Milestones" styleClass="stat-label"/>
+                            <Label fx:id="milestoneCountLabel" text="0" styleClass="stat-value"/>
+                        </VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <Label text="Upcoming Meetings" styleClass="stat-label"/>
+                            <Label fx:id="meetingCountLabel" text="0" styleClass="stat-value"/>
+                        </VBox>
+                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                            <Label text="Notifications" styleClass="stat-label"/>
+                            <Label fx:id="notifCountLabel" text="0" styleClass="stat-value"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Recent proposals -->
+                    <VBox styleClass="content-card" spacing="12">
+                        <Label text="Recent Proposals" styleClass="card-title"/>
+                        <TableView fx:id="proposalsTable" prefHeight="200" styleClass="dark-table">
+                            <columns>
+                                <TableColumn fx:id="propTitleCol"  text="Title"      prefWidth="280"/>
+                                <TableColumn fx:id="propStatusCol" text="Status"     prefWidth="110"/>
+                                <TableColumn fx:id="propDateCol"   text="Submitted"  prefWidth="130"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </StackPane>
+    </center>
+</BorderPane>
