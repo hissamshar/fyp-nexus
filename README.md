@@ -64,6 +64,22 @@ mvn clean compile
 mvn javafx:run
 ```
 
+## 📦 Creating a Native Standalone Binary
+
+You can generate a standalone, self-contained native executable (e.g., a `.exe` for Windows, `.app` for macOS, or binary folder for Linux) that doesn't require users to install Java or Maven.
+
+To build the native binary, simply run the included build script:
+```bash
+chmod +x build-binary.sh
+./build-binary.sh
+```
+
+Once the script finishes, your self-contained app will be located in the `dist/FYPPlatform/` directory. You can run it directly:
+```bash
+./dist/FYPPlatform/bin/FYPPlatform
+```
+*Note: The binary will be built for the Operating System you run the script on.*
+
 ## 🏗️ Architecture
 The project strictly follows the **MVC (Model-View-Controller)** pattern:
 `View (FXML) → Controller → Service → DAO → Database`
