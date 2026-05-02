@@ -28,8 +28,7 @@ jpackage \
   --input target/ \
   --main-jar $(basename $JAR_FILE) \
   --main-class com.fyp.Main \
-  --dest dist/ \
-  --icon src/main/resources/icons/app_icon.png # Optional: assuming icon exists
+  --dest dist/ 
 
 if [ $? -eq 0 ]; then
     echo "----------------------------------------------------"
