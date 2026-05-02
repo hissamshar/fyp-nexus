@@ -47,7 +47,7 @@ jpackage \
   --name FYPPlatform \
   --input target/ \
   --main-jar $(basename $JAR_FILE) \
-  --main-class com.fyp.Main \
+  --main-class com.fyp.Launcher \
   --runtime-image "$RUNTIME_PATH" \
   --dest dist/ 
 
