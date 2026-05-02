@@ -16,18 +16,29 @@ if [ ! -f "$JAR_FILE" ]; then
     exit 1
 fi
 
-# 3. Create the native binary using jpackage
+# 3. Detect Java runtime location
+JAVA_PATH=$(readlink -f $(which java) 2>/dev/null)
+if [ ! -z "$JAVA_PATH" ]; then
+    RUNTIME_PATH=$(dirname $(dirname "$JAVA_PATH"))
+    echo "🔍 Using Java Runtime at: $RUNTIME_PATH"
+else
+    echo "❌ Error: Could not determine Java path."
+    exit 1
+fi
+
+# 4. Create the native binary using jpackage
 echo "🚀 Creating native binary using jpackage..."
 rm -rf dist/
 mkdir -p dist/
 
-# For Linux, this will create a folder with the executable and all dependencies
+# Use --runtime-image to bypass jlink (which fails on Ubuntu if jmods aren't installed)
 jpackage \
   --type app-image \
   --name FYPPlatform \
   --input target/ \
   --main-jar $(basename $JAR_FILE) \
   --main-class com.fyp.Main \
+  --runtime-image "$RUNTIME_PATH" \
   --dest dist/ 
 
 if [ $? -eq 0 ]; then
