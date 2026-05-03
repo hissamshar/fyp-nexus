@@ -3,171 +3,212 @@ package com.fyp.dao;
 import com.fyp.model.DiscussionBoard;
 import com.fyp.model.DiscussionThread;
 import com.fyp.model.Post;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class DiscussionDAO {
 
     // ── Board ──────────────────────────────────────────────────────────────────
 
-    public Optional<DiscussionBoard> findBoardByProjectId(UUID projectId) throws SQLException {
-        String sql = "SELECT * FROM fyp.discussion_boards WHERE project_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, projectId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    DiscussionBoard b = new DiscussionBoard();
-                    b.setBoardId(UUID.fromString(rs.getString("board_id")));
-                    b.setPrivate(rs.getBoolean("is_private"));
-                    b.setProjectId(projectId);
-                    return Optional.of(b);
-                }
-            }
+    public Optional<DiscussionBoard> findBoardByProjectId(UUID projectId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/discussion_boards?project_id=eq." + projectId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            JsonObject obj = array.get(0).getAsJsonObject();
+            DiscussionBoard b = new DiscussionBoard();
+            b.setBoardId(UUID.fromString(obj.get("board_id").getAsString()));
+            b.setPrivate(obj.has("is_private") && obj.get("is_private").getAsBoolean());
+            b.setProjectId(projectId);
+            return Optional.of(b);
         }
         return Optional.empty();
     }
 
-    public UUID insertBoard(UUID projectId, boolean isPrivate) throws SQLException {
-        String sql = "INSERT INTO fyp.discussion_boards (project_id, is_private) VALUES (?::uuid, ?) RETURNING board_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, projectId.toString());
-            ps.setBoolean(2, isPrivate);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("board_id"));
-            }
+    public UUID insertBoard(UUID projectId, boolean isPrivate, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("project_id", projectId.toString());
+        json.addProperty("is_private", isPrivate);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/discussion_boards?select=board_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("board_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.discussion_boards returned no ID.");
+        throw new Exception("Failed to insert discussion board: " + response.body());
     }
 
     // ── Threads ────────────────────────────────────────────────────────────────
 
-    public List<DiscussionThread> findThreadsByBoardId(UUID boardId) throws SQLException {
+    public List<DiscussionThread> findThreadsByBoardId(UUID boardId, String jwt) throws Exception {
         List<DiscussionThread> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.discussion_threads WHERE board_id = ?::uuid ORDER BY is_pinned DESC, created_at DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, boardId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    DiscussionThread t = new DiscussionThread();
-                    t.setThreadId(UUID.fromString(rs.getString("thread_id")));
-                    t.setTopic(rs.getString("topic"));
-                    t.setLocked(rs.getBoolean("is_locked"));
-                    t.setPinned(rs.getBoolean("is_pinned"));
-                    t.setBoardId(boardId);
-                    list.add(t);
-                }
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/discussion_threads?board_id=eq." + boardId + "&order=is_pinned.desc,created_at.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                JsonObject obj = el.getAsJsonObject();
+                DiscussionThread t = new DiscussionThread();
+                t.setThreadId(UUID.fromString(obj.get("thread_id").getAsString()));
+                t.setTopic(obj.has("topic") && !obj.get("topic").isJsonNull() ? obj.get("topic").getAsString() : "");
+                t.setLocked(obj.has("is_locked") && obj.get("is_locked").getAsBoolean());
+                t.setPinned(obj.has("is_pinned") && obj.get("is_pinned").getAsBoolean());
+                t.setBoardId(boardId);
+                list.add(t);
             }
         }
         return list;
     }
 
-    public UUID insertThread(UUID boardId, String topic) throws SQLException {
-        String sql = "INSERT INTO fyp.discussion_threads (board_id, topic) VALUES (?::uuid, ?) RETURNING thread_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, boardId.toString());
-            ps.setString(2, topic);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("thread_id"));
-            }
+    public UUID insertThread(UUID boardId, String topic, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("board_id", boardId.toString());
+        json.addProperty("topic", topic);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/discussion_threads?select=thread_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("thread_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.discussion_threads returned no ID.");
+        throw new Exception("Failed to insert thread: " + response.body());
     }
 
-    public void lockThread(UUID threadId, boolean locked) throws SQLException {
-        String sql = "UPDATE fyp.discussion_threads SET is_locked = ? WHERE thread_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBoolean(1, locked);
-            ps.setString(2, threadId.toString());
-            ps.executeUpdate();
-        }
+    public void lockThread(UUID threadId, boolean locked, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("is_locked", locked);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/discussion_threads?thread_id=eq." + threadId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    public void pinThread(UUID threadId, boolean pinned) throws SQLException {
-        String sql = "UPDATE fyp.discussion_threads SET is_pinned = ? WHERE thread_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBoolean(1, pinned);
-            ps.setString(2, threadId.toString());
-            ps.executeUpdate();
-        }
+    public void pinThread(UUID threadId, boolean pinned, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("is_pinned", pinned);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/discussion_threads?thread_id=eq." + threadId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
     // ── Posts ──────────────────────────────────────────────────────────────────
 
-    public List<Post> findPostsByThreadId(UUID threadId) throws SQLException {
+    public List<Post> findPostsByThreadId(UUID threadId, String jwt) throws Exception {
         List<Post> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.posts WHERE thread_id = ?::uuid AND is_deleted = FALSE ORDER BY timestamp ASC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, threadId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapPost(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/posts?thread_id=eq." + threadId + "&is_deleted=eq.false&order=timestamp.asc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapPost(el.getAsJsonObject()));
             }
         }
         return list;
     }
 
-    public List<Post> searchPosts(UUID boardId, String query) throws SQLException {
+    public List<Post> searchPosts(UUID boardId, String query, String jwt) throws Exception {
         List<Post> list = new ArrayList<>();
-        String sql = """
-            SELECT p.* FROM fyp.posts p
-            JOIN fyp.discussion_threads t ON t.thread_id = p.thread_id
-            WHERE t.board_id = ?::uuid AND p.is_deleted = FALSE
-              AND LOWER(p.content) LIKE LOWER(?)
-            ORDER BY p.timestamp DESC
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, boardId.toString());
-            ps.setString(2, "%" + query + "%");
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapPost(rs));
+        String encodedKw = URLEncoder.encode("*" + query + "*", StandardCharsets.UTF_8);
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/discussion_threads?select=posts(*)&board_id=eq." + boardId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray threadArray = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement tEl : threadArray) {
+                JsonObject tObj = tEl.getAsJsonObject();
+                if (tObj.has("posts") && !tObj.get("posts").isJsonNull()) {
+                    JsonArray postsArr = tObj.getAsJsonArray("posts");
+                    for (JsonElement pEl : postsArr) {
+                        JsonObject pObj = pEl.getAsJsonObject();
+                        if (!pObj.get("is_deleted").getAsBoolean() && 
+                            pObj.get("content").getAsString().toLowerCase().contains(query.toLowerCase())) {
+                            list.add(mapPost(pObj));
+                        }
+                    }
+                }
             }
         }
+        list.sort(Comparator.comparing(Post::getTimestamp).reversed());
         return list;
     }
 
-    public UUID insertPost(UUID threadId, UUID authorId, String content, String attachmentPath) throws SQLException {
-        String sql = "INSERT INTO fyp.posts (thread_id, author_id, content, attachment_path) " +
-                     "VALUES (?::uuid, ?::uuid, ?, ?) RETURNING post_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, threadId.toString());
-            ps.setString(2, authorId.toString());
-            ps.setString(3, content);
-            ps.setString(4, attachmentPath);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("post_id"));
-            }
+    public UUID insertPost(UUID threadId, UUID authorId, String content, String attachmentPath, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("thread_id", threadId.toString());
+        json.addProperty("author_id", authorId.toString());
+        json.addProperty("content", content);
+        if (attachmentPath != null) json.addProperty("attachment_path", attachmentPath);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/posts?select=post_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("post_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.posts returned no ID.");
+        throw new Exception("Failed to insert post: " + response.body());
     }
 
-    public void softDeletePost(UUID postId) throws SQLException {
-        String sql = "UPDATE fyp.posts SET is_deleted = TRUE, content = '[deleted]' WHERE post_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, postId.toString());
-            ps.executeUpdate();
-        }
+    public void softDeletePost(UUID postId, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("is_deleted", true);
+        json.addProperty("content", "[deleted]");
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/posts?post_id=eq." + postId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    private Post mapPost(ResultSet rs) throws SQLException {
+    private Post mapPost(JsonObject obj) {
         Post p = new Post();
-        p.setPostId(UUID.fromString(rs.getString("post_id")));
-        p.setContent(rs.getString("content"));
-        p.setTimestamp(rs.getTimestamp("timestamp").toLocalDateTime());
-        p.setThreadId(UUID.fromString(rs.getString("thread_id")));
-        p.setAuthorId(UUID.fromString(rs.getString("author_id")));
-        p.setAttachmentPath(rs.getString("attachment_path"));
-        p.setDeleted(rs.getBoolean("is_deleted"));
+        p.setPostId(UUID.fromString(obj.get("post_id").getAsString()));
+        p.setContent(obj.has("content") && !obj.get("content").isJsonNull() ? obj.get("content").getAsString() : "");
+        if (obj.has("timestamp") && !obj.get("timestamp").isJsonNull()) {
+            p.setTimestamp(LocalDateTime.parse(obj.get("timestamp").getAsString(), DateTimeFormatter.ISO_DATE_TIME));
+        }
+        p.setThreadId(UUID.fromString(obj.get("thread_id").getAsString()));
+        p.setAuthorId(UUID.fromString(obj.get("author_id").getAsString()));
+        p.setAttachmentPath(obj.has("attachment_path") && !obj.get("attachment_path").isJsonNull() ? obj.get("attachment_path").getAsString() : null);
+        p.setDeleted(obj.has("is_deleted") && obj.get("is_deleted").getAsBoolean());
         return p;
     }
 }

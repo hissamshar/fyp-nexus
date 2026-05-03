@@ -64,11 +64,19 @@ public class SupervisorDashboardController implements Initializable {
                 List<Project> projects        = projectService.getProjectsForCurrentUser();
                 List<MeetingRequest> meetings = meetingService.getMeetingsForCurrentUser();
                 int unread = notifSvc.getUnreadCount(SessionManager.getCurrentUser().getUserId());
-                Supervisor sup = (Supervisor) SessionManager.getCurrentUser();
+                User u = SessionManager.getCurrentUser();
+                int slots = 0;
+                if (u instanceof Supervisor sup) {
+                    slots = sup.getSlotsAvailable();
+                } else {
+                    var sv = new com.fyp.dao.SupervisorDAO().findByUserId(u.getUserId(), SessionManager.getJwtToken());
+                    if (sv.isPresent()) slots = sv.get().getSlotsAvailable();
+                }
+                final int finalSlots = slots;
                 Platform.runLater(() -> {
                     pendingLabel.setText(String.valueOf(pending.size()));
                     projectsLabel.setText(String.valueOf(projects.size()));
-                    slotsLabel.setText(String.valueOf(sup.getSlotsAvailable()));
+                    slotsLabel.setText(String.valueOf(finalSlots));
                     meetLabel.setText(String.valueOf(meetings.size()));
                     notifBadge.setText(unread > 0 ? String.valueOf(unread) : "");
                     notifBadge.setVisible(unread > 0);

@@ -1,15 +1,20 @@
 package com.fyp.util;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.SecureRandom;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
  * Generate, store, and verify 6-digit OTPs with 15-minute expiry.
- * Stored in fyp.otp_tokens. OTPs are deleted immediately after verification.
+ * Stored in fyp.otp_tokens via Supabase REST API.
+ * OTPs are marked as used immediately after verification.
  */
 public class OTPService {
 
@@ -20,77 +25,67 @@ public class OTPService {
 
     /**
      * Generate a 6-digit OTP, store it in the DB, and return the code.
-     * @param userId  The user who needs the OTP
-     * @param purpose "EMAIL_VERIFY" or "PASSWORD_RESET"
      */
     public static String generateAndStore(UUID userId, String purpose) throws Exception {
         String otp = String.format("%06d", RANDOM.nextInt(1_000_000));
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
+        String jwt = SessionManager.getJwtToken();
 
-        // Invalidate any existing unused OTPs for this user + purpose
-        String invalidateSql = "UPDATE fyp.otp_tokens SET is_used = TRUE " +
-                               "WHERE user_id = ?::uuid AND purpose = ? AND is_used = FALSE";
+        // Invalidate existing unused OTPs
+        JsonObject invalidateBody = new JsonObject();
+        invalidateBody.addProperty("is_used", true);
+        HttpRequest.Builder invalidateReq = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/otp_tokens?user_id=eq." + userId + "&purpose=eq." + purpose + "&is_used=eq.false"))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(invalidateBody.toString()));
+        SupabaseClient.sendAuthenticatedRequest(invalidateReq, jwt);
 
-        String insertSql = "INSERT INTO fyp.otp_tokens (user_id, otp_code, purpose, expires_at) " +
-                           "VALUES (?::uuid, ?, ?, ?)";
-
-        try (Connection conn = DBConnection.getConnection()) {
-            try (PreparedStatement ps = conn.prepareStatement(invalidateSql)) {
-                ps.setString(1, userId.toString());
-                ps.setString(2, purpose);
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-                ps.setString(1, userId.toString());
-                ps.setString(2, otp);
-                ps.setString(3, purpose);
-                ps.setObject(4, expiresAt);
-                ps.executeUpdate();
-            }
-        }
+        // Insert new OTP
+        JsonObject json = new JsonObject();
+        json.addProperty("user_id", userId.toString());
+        json.addProperty("otp_code", otp);
+        json.addProperty("purpose", purpose);
+        json.addProperty("expires_at", expiresAt.toString());
+        HttpRequest.Builder insertReq = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/otp_tokens"))
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(insertReq, jwt);
 
         return otp;
     }
 
     /**
      * Verify an OTP. Returns true if valid, not expired, and not already used.
-     * Deletes the token immediately on successful verification.
      */
     public static boolean verify(UUID userId, String inputOtp, String purpose) throws Exception {
-        String sql = "SELECT token_id, expires_at FROM fyp.otp_tokens " +
-                     "WHERE user_id = ?::uuid AND otp_code = ? AND purpose = ? " +
-                     "AND is_used = FALSE ORDER BY created_at DESC LIMIT 1";
+        String jwt = SessionManager.getJwtToken();
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/otp_tokens?user_id=eq." + userId
+                        + "&otp_code=eq." + inputOtp + "&purpose=eq." + purpose
+                        + "&is_used=eq.false&order=created_at.desc&limit=1"))
+                .GET();
+        HttpResponse<String> res = SupabaseClient.sendAuthenticatedRequest(req, jwt);
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            ps.setString(2, inputOtp);
-            ps.setString(3, purpose);
+        if (res.statusCode() != 200 || res.body().equals("[]")) return false;
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return false;  // Not found
+        JsonArray arr = JsonParser.parseString(res.body()).getAsJsonArray();
+        JsonObject token = arr.get(0).getAsJsonObject();
+        String tokenId = token.get("token_id").getAsString();
+        String expiresStr = token.get("expires_at").getAsString();
+        LocalDateTime expiresAt = LocalDateTime.parse(expiresStr);
 
-                UUID tokenId  = UUID.fromString(rs.getString("token_id"));
-                LocalDateTime expiresAt = rs.getTimestamp("expires_at").toLocalDateTime();
+        // Mark as used regardless
+        markUsed(UUID.fromString(tokenId), jwt);
 
-                if (LocalDateTime.now().isAfter(expiresAt)) {
-                    // Expired — mark as used but don't grant access
-                    markUsed(conn, tokenId);
-                    return false;
-                }
-
-                // Valid — delete token immediately
-                markUsed(conn, tokenId);
-                return true;
-            }
-        }
+        // Check expiry
+        return !LocalDateTime.now().isAfter(expiresAt);
     }
 
-    private static void markUsed(Connection conn, UUID tokenId) throws Exception {
-        String sql = "UPDATE fyp.otp_tokens SET is_used = TRUE WHERE token_id = ?::uuid";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, tokenId.toString());
-            ps.executeUpdate();
-        }
+    private static void markUsed(UUID tokenId, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("is_used", true);
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/otp_tokens?token_id=eq." + tokenId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(req, jwt);
     }
 }

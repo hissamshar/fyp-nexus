@@ -19,8 +19,6 @@ public class LoginController {
     @FXML private Button loginBtn;
     @FXML private ProgressIndicator loadingIndicator;
 
-    private final AuthService authService = new AuthService();
-
     @FXML
     private void handleLogin() {
         String email = emailField.getText().trim();
@@ -35,35 +33,25 @@ public class LoginController {
 
         setLoading(true);
 
-        Task<Optional<User>> task = new Task<>() {
+        Task<Boolean> task = new Task<>() {
             @Override
-            protected Optional<User> call() throws Exception {
-                return authService.login(email, password);
+            protected Boolean call() throws Exception {
+                return AuthService.login(email, password);
             }
         };
 
         task.setOnSucceeded(e -> {
             setLoading(false);
-            Optional<User> userOpt = task.getValue();
-            if (userOpt.isEmpty()) {
+            if (!task.getValue()) {
                 showError("Invalid email or password.");
             } else {
-                User user = userOpt.get();
-                SessionManager.setCurrentUser(user);
-                navigateToDashboard(user.getRole());
+                navigateToDashboard(SessionManager.getCurrentRole());
             }
         });
 
         task.setOnFailed(e -> {
             setLoading(false);
-            String msg = task.getException().getMessage();
-            if (msg != null && msg.contains("locked")) {
-                showError(msg);
-            } else if (msg != null && msg.contains("Email not verified")) {
-                showError(msg);
-            } else {
-                showError("Connection error. Please check your network and try again.");
-            }
+            showError("Connection error. Please check your network and try again.");
         });
 
         new Thread(task).start();

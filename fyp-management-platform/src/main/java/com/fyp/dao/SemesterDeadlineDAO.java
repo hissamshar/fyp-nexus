@@ -1,84 +1,90 @@
 package com.fyp.dao;
 
 import com.fyp.model.SemesterDeadline;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class SemesterDeadlineDAO {
 
-    public List<SemesterDeadline> findAll() throws SQLException {
+    public List<SemesterDeadline> findAll(String jwt) throws Exception {
         List<SemesterDeadline> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.semester_deadlines ORDER BY due_date ASC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/semester_deadlines?order=due_date.asc"))
+                .GET();
+        HttpResponse<String> res = SupabaseClient.sendAuthenticatedRequest(req, jwt);
+        if (res.statusCode() == 200 && !res.body().equals("[]")) {
+            for (JsonElement el : JsonParser.parseString(res.body()).getAsJsonArray()) list.add(mapRow(el.getAsJsonObject()));
         }
         return list;
     }
 
-    public List<SemesterDeadline> findBySemester(String semester) throws SQLException {
+    public List<SemesterDeadline> findBySemester(String semester, String jwt) throws Exception {
         List<SemesterDeadline> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.semester_deadlines WHERE semester = ? ORDER BY due_date ASC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, semester);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
-            }
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/semester_deadlines?semester=eq." + semester + "&order=due_date.asc"))
+                .GET();
+        HttpResponse<String> res = SupabaseClient.sendAuthenticatedRequest(req, jwt);
+        if (res.statusCode() == 200 && !res.body().equals("[]")) {
+            for (JsonElement el : JsonParser.parseString(res.body()).getAsJsonArray()) list.add(mapRow(el.getAsJsonObject()));
         }
         return list;
     }
 
-    public UUID insert(SemesterDeadline d) throws SQLException {
-        String sql = "INSERT INTO fyp.semester_deadlines (semester, deadline_type, due_date, description) " +
-                     "VALUES (?, ?, ?, ?) RETURNING deadline_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, d.getSemester());
-            ps.setString(2, d.getDeadlineType());
-            ps.setObject(3, d.getDueDate());
-            ps.setString(4, d.getDescription());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("deadline_id"));
-            }
+    public UUID insert(SemesterDeadline d, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("semester", d.getSemester());
+        json.addProperty("deadline_type", d.getDeadlineType());
+        if (d.getDueDate() != null) json.addProperty("due_date", d.getDueDate().toString());
+        json.addProperty("description", d.getDescription());
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/semester_deadlines?select=deadline_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> res = SupabaseClient.sendAuthenticatedRequest(req, jwt);
+        if (res.statusCode() == 201) {
+            return UUID.fromString(JsonParser.parseString(res.body()).getAsJsonArray().get(0).getAsJsonObject().get("deadline_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.semester_deadlines returned no ID.");
+        throw new Exception("Failed to insert deadline: " + res.body());
     }
 
-    public void update(SemesterDeadline d) throws SQLException {
-        String sql = "UPDATE fyp.semester_deadlines SET semester=?, deadline_type=?, due_date=?, description=? " +
-                     "WHERE deadline_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, d.getSemester());
-            ps.setString(2, d.getDeadlineType());
-            ps.setObject(3, d.getDueDate());
-            ps.setString(4, d.getDescription());
-            ps.setString(5, d.getDeadlineId().toString());
-            ps.executeUpdate();
-        }
+    public void update(SemesterDeadline d, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("semester", d.getSemester());
+        json.addProperty("deadline_type", d.getDeadlineType());
+        if (d.getDueDate() != null) json.addProperty("due_date", d.getDueDate().toString());
+        json.addProperty("description", d.getDescription());
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/semester_deadlines?deadline_id=eq." + d.getDeadlineId()))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(req, jwt);
     }
 
-    public void delete(UUID deadlineId) throws SQLException {
-        String sql = "DELETE FROM fyp.semester_deadlines WHERE deadline_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, deadlineId.toString());
-            ps.executeUpdate();
-        }
+    public void delete(UUID deadlineId, String jwt) throws Exception {
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/semester_deadlines?deadline_id=eq." + deadlineId))
+                .DELETE();
+        SupabaseClient.sendAuthenticatedRequest(req, jwt);
     }
 
-    private SemesterDeadline mapRow(ResultSet rs) throws SQLException {
+    private SemesterDeadline mapRow(JsonObject obj) {
         SemesterDeadline d = new SemesterDeadline();
-        d.setDeadlineId(UUID.fromString(rs.getString("deadline_id")));
-        d.setSemester(rs.getString("semester"));
-        d.setDeadlineType(rs.getString("deadline_type"));
-        Timestamp ts = rs.getTimestamp("due_date");
-        if (ts != null) d.setDueDate(ts.toLocalDateTime());
-        d.setDescription(rs.getString("description"));
+        d.setDeadlineId(UUID.fromString(obj.get("deadline_id").getAsString()));
+        d.setSemester(obj.has("semester") && !obj.get("semester").isJsonNull() ? obj.get("semester").getAsString() : "");
+        d.setDeadlineType(obj.has("deadline_type") && !obj.get("deadline_type").isJsonNull() ? obj.get("deadline_type").getAsString() : "");
+        if (obj.has("due_date") && !obj.get("due_date").isJsonNull()) {
+            d.setDueDate(LocalDateTime.parse(obj.get("due_date").getAsString(), DateTimeFormatter.ISO_DATE_TIME));
+        }
+        d.setDescription(obj.has("description") && !obj.get("description").isJsonNull() ? obj.get("description").getAsString() : "");
         return d;
     }
 }

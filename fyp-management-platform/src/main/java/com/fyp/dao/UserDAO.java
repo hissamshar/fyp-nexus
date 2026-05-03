@@ -1,183 +1,113 @@
 package com.fyp.dao;
 
 import com.fyp.model.User;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * DAO for fyp.users table.
- * All queries use PreparedStatement — no string concatenation.
+ * REST API DAO for fyp.users table.
  */
 public class UserDAO {
 
-    public Optional<User> findByEmail(String email) throws SQLException {
-        String sql = "SELECT user_id, name, email, password_hash, role, is_active, is_email_verified " +
-                     "FROM fyp.users WHERE email = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<User> findByEmail(String email, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/users?email=eq." + email))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public Optional<User> findById(UUID userId) throws SQLException {
-        String sql = "SELECT user_id, name, email, password_hash, role, is_active, is_email_verified " +
-                     "FROM fyp.users WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<User> findById(UUID userId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/users?user_id=eq." + userId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public List<User> findAll() throws SQLException {
+    public List<User> findAll(String jwt) throws Exception {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, name, email, password_hash, role, is_active, is_email_verified " +
-                     "FROM fyp.users ORDER BY name";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) users.add(mapRow(rs));
-        }
-        return users;
-    }
-
-    public List<User> findByRole(String role) throws SQLException {
-        List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, name, email, password_hash, role, is_active, is_email_verified " +
-                     "FROM fyp.users WHERE role = ? ORDER BY name";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, role);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) users.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/users?order=name.asc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                users.add(mapRow(el.getAsJsonObject()));
             }
         }
         return users;
     }
 
-    public UUID insert(String name, String email, String passwordHash, String role) throws SQLException {
-        String sql = "INSERT INTO fyp.users (name, email, password_hash, role) " +
-                     "VALUES (?, ?, ?, ?) RETURNING user_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, name);
-            ps.setString(2, email);
-            ps.setString(3, passwordHash);
-            ps.setString(4, role);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("user_id"));
+    public List<User> findByRole(String role, String jwt) throws Exception {
+        List<User> users = new ArrayList<>();
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/users?role=eq." + role + "&order=name.asc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                users.add(mapRow(el.getAsJsonObject()));
             }
         }
-        throw new SQLException("INSERT into fyp.users returned no ID.");
+        return users;
     }
 
-    public void updateProfile(UUID userId, String name, String email) throws SQLException {
-        String sql = "UPDATE fyp.users SET name = ?, email = ? WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, name);
-            ps.setString(2, email);
-            ps.setString(3, userId.toString());
-            ps.executeUpdate();
-        }
+    public void updateProfile(UUID userId, String name, String email, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("name", name);
+        json.addProperty("email", email);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/users?user_id=eq." + userId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    public void updatePasswordHash(UUID userId, String newHash) throws SQLException {
-        String sql = "UPDATE fyp.users SET password_hash = ? WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newHash);
-            ps.setString(2, userId.toString());
-            ps.executeUpdate();
-        }
+    public void setActive(UUID userId, boolean active, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("is_active", active);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/users?user_id=eq." + userId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    public void setEmailVerified(UUID userId, boolean verified) throws SQLException {
-        String sql = "UPDATE fyp.users SET is_email_verified = ? WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBoolean(1, verified);
-            ps.setString(2, userId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    public void setActive(UUID userId, boolean active) throws SQLException {
-        String sql = "UPDATE fyp.users SET is_active = ? WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBoolean(1, active);
-            ps.setString(2, userId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    public void incrementFailedAttempts(UUID userId) throws SQLException {
-        String sql = "UPDATE fyp.users SET failed_login_attempts = failed_login_attempts + 1 " +
-                     "WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    public void resetFailedAttempts(UUID userId) throws SQLException {
-        String sql = "UPDATE fyp.users SET failed_login_attempts = 0, locked_until = NULL " +
-                     "WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    public int getFailedAttempts(UUID userId) throws SQLException {
-        String sql = "SELECT failed_login_attempts FROM fyp.users WHERE user_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt("failed_login_attempts");
-            }
-        }
-        return 0;
-    }
-
-    public boolean emailExists(String email) throws SQLException {
-        String sql = "SELECT 1 FROM fyp.users WHERE email = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    private User mapRow(ResultSet rs) throws SQLException {
-        // Returns a lightweight User stub — full role objects built in role-specific DAOs
-        com.fyp.model.User u = new com.fyp.model.User(
-            UUID.fromString(rs.getString("user_id")),
-            rs.getString("name"),
-            rs.getString("email"),
-            rs.getString("password_hash"),
-            rs.getBoolean("is_active"),
-            rs.getBoolean("is_email_verified"),
-            rs.getString("role")
-        ) {};  // anonymous subclass since User is abstract
-        return u;
+    private User mapRow(JsonObject obj) {
+        return new User(
+            UUID.fromString(obj.get("user_id").getAsString()),
+            obj.has("name") && !obj.get("name").isJsonNull() ? obj.get("name").getAsString() : "",
+            obj.has("email") && !obj.get("email").isJsonNull() ? obj.get("email").getAsString() : "",
+            "", // no password hash in REST
+            obj.has("is_active") && obj.get("is_active").getAsBoolean(),
+            true, // email verified handled by auth
+            obj.has("role") && !obj.get("role").isJsonNull() ? obj.get("role").getAsString() : ""
+        ) {};
     }
 }

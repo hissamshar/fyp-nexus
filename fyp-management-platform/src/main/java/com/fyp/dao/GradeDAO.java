@@ -2,110 +2,132 @@ package com.fyp.dao;
 
 import com.fyp.model.Grade;
 import com.fyp.model.GradeEntry;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class GradeDAO {
 
-    public Optional<Grade> findByProjectId(UUID projectId) throws SQLException {
-        String sql = "SELECT * FROM fyp.grades WHERE project_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, projectId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapGrade(rs));
-            }
+    public Optional<Grade> findByProjectId(UUID projectId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/grades?project_id=eq." + projectId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapGrade(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public UUID insertGrade(UUID projectId, UUID rubricId) throws SQLException {
-        String sql = "INSERT INTO fyp.grades (project_id, rubric_id, is_published) " +
-                     "VALUES (?::uuid, ?::uuid, FALSE) RETURNING grade_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, projectId.toString());
-            ps.setString(2, rubricId != null ? rubricId.toString() : null);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("grade_id"));
-            }
+    public UUID insertGrade(UUID projectId, UUID rubricId, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("project_id", projectId.toString());
+        if (rubricId != null) json.addProperty("rubric_id", rubricId.toString());
+        json.addProperty("is_published", false);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/grades?select=grade_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("grade_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.grades returned no ID.");
+        throw new Exception("Failed to insert grade: " + response.body());
     }
 
-    public void publishGrade(UUID gradeId, String letterGrade) throws SQLException {
-        String sql = "UPDATE fyp.grades SET is_published = TRUE, letter_grade = ? WHERE grade_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, letterGrade);
-            ps.setString(2, gradeId.toString());
-            ps.executeUpdate();
-        }
+    public void publishGrade(UUID gradeId, String letterGrade, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("is_published", true);
+        json.addProperty("letter_grade", letterGrade);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/grades?grade_id=eq." + gradeId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    public UUID insertGradeEntry(GradeEntry entry) throws SQLException {
-        String sql = "INSERT INTO fyp.grade_entries (score, comments, grade_id, grader_id, criterion_id) " +
-                     "VALUES (?, ?, ?::uuid, ?::uuid, ?::uuid) RETURNING entry_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, entry.getScore());
-            ps.setString(2, entry.getComments());
-            ps.setString(3, entry.getGradeId().toString());
-            ps.setString(4, entry.getGraderId().toString());
-            ps.setString(5, entry.getCriterionId() != null ? entry.getCriterionId().toString() : null);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("entry_id"));
-            }
+    public UUID insertGradeEntry(GradeEntry entry, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("score", entry.getScore());
+        json.addProperty("comments", entry.getComments());
+        json.addProperty("grade_id", entry.getGradeId().toString());
+        json.addProperty("grader_id", entry.getGraderId().toString());
+        if (entry.getCriterionId() != null) json.addProperty("criterion_id", entry.getCriterionId().toString());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/grade_entries?select=entry_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("entry_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.grade_entries returned no ID.");
+        throw new Exception("Failed to insert grade entry: " + response.body());
     }
 
-    public List<GradeEntry> findEntriesByGradeId(UUID gradeId) throws SQLException {
+    public List<GradeEntry> findEntriesByGradeId(UUID gradeId, String jwt) throws Exception {
         List<GradeEntry> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.grade_entries WHERE grade_id = ?::uuid ORDER BY graded_at DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, gradeId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    GradeEntry e = new GradeEntry();
-                    e.setEntryId(UUID.fromString(rs.getString("entry_id")));
-                    e.setScore(rs.getInt("score"));
-                    e.setComments(rs.getString("comments"));
-                    e.setGradedAt(rs.getTimestamp("graded_at").toLocalDateTime());
-                    e.setGradeId(UUID.fromString(rs.getString("grade_id")));
-                    e.setGraderId(UUID.fromString(rs.getString("grader_id")));
-                    String cid = rs.getString("criterion_id");
-                    if (cid != null) e.setCriterionId(UUID.fromString(cid));
-                    list.add(e);
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/grade_entries?grade_id=eq." + gradeId + "&order=graded_at.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                JsonObject obj = el.getAsJsonObject();
+                GradeEntry e = new GradeEntry();
+                e.setEntryId(UUID.fromString(obj.get("entry_id").getAsString()));
+                e.setScore(obj.get("score").getAsInt());
+                e.setComments(obj.has("comments") && !obj.get("comments").isJsonNull() ? obj.get("comments").getAsString() : "");
+                if (obj.has("graded_at") && !obj.get("graded_at").isJsonNull()) {
+                    e.setGradedAt(LocalDateTime.parse(obj.get("graded_at").getAsString(), DateTimeFormatter.ISO_DATE_TIME));
                 }
+                e.setGradeId(UUID.fromString(obj.get("grade_id").getAsString()));
+                e.setGraderId(UUID.fromString(obj.get("grader_id").getAsString()));
+                if (obj.has("criterion_id") && !obj.get("criterion_id").isJsonNull()) {
+                    e.setCriterionId(UUID.fromString(obj.get("criterion_id").getAsString()));
+                }
+                list.add(e);
             }
         }
         return list;
     }
 
-    public double calculateWeightedTotal(UUID gradeId) throws SQLException {
-        String sql = "SELECT SUM(ge.score) as total FROM fyp.grade_entries ge WHERE ge.grade_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, gradeId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getDouble("total");
-            }
+    public double calculateWeightedTotal(UUID gradeId, String jwt) throws Exception {
+        List<GradeEntry> entries = findEntriesByGradeId(gradeId, jwt);
+        double total = 0;
+        for (GradeEntry e : entries) {
+            total += e.getScore();
         }
-        return 0.0;
+        return total;
     }
 
-    private Grade mapGrade(ResultSet rs) throws SQLException {
+    private Grade mapGrade(JsonObject obj) {
         Grade g = new Grade();
-        g.setGradeId(UUID.fromString(rs.getString("grade_id")));
-        g.setLetterGrade(rs.getString("letter_grade"));
-        g.setPublished(rs.getBoolean("is_published"));
-        g.setProjectId(UUID.fromString(rs.getString("project_id")));
-        String rid = rs.getString("rubric_id");
-        if (rid != null) g.setRubricId(UUID.fromString(rid));
+        g.setGradeId(UUID.fromString(obj.get("grade_id").getAsString()));
+        g.setLetterGrade(obj.has("letter_grade") && !obj.get("letter_grade").isJsonNull() ? obj.get("letter_grade").getAsString() : null);
+        g.setPublished(obj.has("is_published") && obj.get("is_published").getAsBoolean());
+        g.setProjectId(UUID.fromString(obj.get("project_id").getAsString()));
+        if (obj.has("rubric_id") && !obj.get("rubric_id").isJsonNull()) {
+            g.setRubricId(UUID.fromString(obj.get("rubric_id").getAsString()));
+        }
         return g;
     }
 }

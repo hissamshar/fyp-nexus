@@ -1,9 +1,15 @@
 package com.fyp.dao;
 
 import com.fyp.model.Supervisor;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,138 +17,132 @@ import java.util.UUID;
 
 public class SupervisorDAO {
 
-    public Optional<Supervisor> findByUserId(UUID userId) throws SQLException {
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   s.supervisor_id, s.employee_id, s.research_area, s.slots_available
-            FROM fyp.users u
-            JOIN fyp.supervisors s ON s.user_id = u.user_id
-            WHERE u.user_id = ?::uuid
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<Supervisor> findByUserId(UUID userId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/supervisors?select=supervisor_id,employee_id,research_area,slots_available,users(user_id,name,email,is_active)&user_id=eq." + userId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public Optional<Supervisor> findBySupervisorId(UUID supervisorId) throws SQLException {
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   s.supervisor_id, s.employee_id, s.research_area, s.slots_available
-            FROM fyp.users u
-            JOIN fyp.supervisors s ON s.user_id = u.user_id
-            WHERE s.supervisor_id = ?::uuid
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, supervisorId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<Supervisor> findBySupervisorId(UUID supervisorId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/supervisors?select=supervisor_id,employee_id,research_area,slots_available,users(user_id,name,email,is_active)&supervisor_id=eq." + supervisorId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public List<Supervisor> findAll() throws SQLException {
+    public List<Supervisor> findAll(String jwt) throws Exception {
         List<Supervisor> list = new ArrayList<>();
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   s.supervisor_id, s.employee_id, s.research_area, s.slots_available
-            FROM fyp.users u
-            JOIN fyp.supervisors s ON s.user_id = u.user_id
-            WHERE u.is_active = TRUE
-            ORDER BY u.name
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
-        }
-        return list;
-    }
-
-    public List<Supervisor> findWithAvailableSlots() throws SQLException {
-        List<Supervisor> list = new ArrayList<>();
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   s.supervisor_id, s.employee_id, s.research_area, s.slots_available
-            FROM fyp.users u
-            JOIN fyp.supervisors s ON s.user_id = u.user_id
-            WHERE u.is_active = TRUE AND s.slots_available > 0
-            ORDER BY s.slots_available DESC, u.name
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
-        }
-        return list;
-    }
-
-    public UUID insert(UUID userId, String employeeId, String researchArea, int slotsAvailable) throws SQLException {
-        String sql = "INSERT INTO fyp.supervisors (user_id, employee_id, research_area, slots_available) " +
-                     "VALUES (?::uuid, ?, ?, ?) RETURNING supervisor_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            ps.setString(2, employeeId);
-            ps.setString(3, researchArea);
-            ps.setInt(4, slotsAvailable);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("supervisor_id"));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/supervisors?select=supervisor_id,employee_id,research_area,slots_available,users(user_id,name,email,is_active)"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                JsonObject obj = el.getAsJsonObject();
+                if (obj.has("users") && obj.get("users").getAsJsonObject().get("is_active").getAsBoolean()) {
+                    list.add(mapRow(obj));
+                }
             }
         }
-        throw new SQLException("INSERT into fyp.supervisors returned no ID.");
+        return list;
     }
 
-    public void update(UUID supervisorId, String researchArea, int slotsAvailable) throws SQLException {
-        String sql = "UPDATE fyp.supervisors SET research_area = ?, slots_available = ? " +
-                     "WHERE supervisor_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, researchArea);
-            ps.setInt(2, slotsAvailable);
-            ps.setString(3, supervisorId.toString());
-            ps.executeUpdate();
+    public List<Supervisor> findWithAvailableSlots(String jwt) throws Exception {
+        List<Supervisor> list = new ArrayList<>();
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/supervisors?select=supervisor_id,employee_id,research_area,slots_available,users(user_id,name,email,is_active)&slots_available=gt.0&order=slots_available.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                JsonObject obj = el.getAsJsonObject();
+                if (obj.has("users") && obj.get("users").getAsJsonObject().get("is_active").getAsBoolean()) {
+                    list.add(mapRow(obj));
+                }
+            }
+        }
+        return list;
+    }
+
+    public UUID insert(UUID userId, String employeeId, String researchArea, int slotsAvailable, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("user_id", userId.toString());
+        json.addProperty("employee_id", employeeId);
+        json.addProperty("research_area", researchArea);
+        json.addProperty("slots_available", slotsAvailable);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/supervisors?select=supervisor_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("supervisor_id").getAsString());
+        }
+        throw new Exception("Failed to insert supervisor: " + response.body());
+    }
+
+    public void update(UUID supervisorId, String researchArea, int slotsAvailable, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("research_area", researchArea);
+        json.addProperty("slots_available", slotsAvailable);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/supervisors?supervisor_id=eq." + supervisorId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
+    }
+
+    // Note: Decrement and Increment require atomic operations which are tricky in pure REST without RPC.
+    // For simplicity in this rewrite, we fetch current, modify, and update.
+    public void decrementSlots(UUID supervisorId, String jwt) throws Exception {
+        Optional<Supervisor> supOpt = findBySupervisorId(supervisorId, jwt);
+        if (supOpt.isPresent()) {
+            int newSlots = Math.max(0, supOpt.get().getSlotsAvailable() - 1);
+            update(supervisorId, supOpt.get().getResearchArea(), newSlots, jwt);
         }
     }
 
-    public void decrementSlots(UUID supervisorId) throws SQLException {
-        String sql = "UPDATE fyp.supervisors SET slots_available = GREATEST(0, slots_available - 1) " +
-                     "WHERE supervisor_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, supervisorId.toString());
-            ps.executeUpdate();
+    public void incrementSlots(UUID supervisorId, String jwt) throws Exception {
+        Optional<Supervisor> supOpt = findBySupervisorId(supervisorId, jwt);
+        if (supOpt.isPresent()) {
+            int newSlots = supOpt.get().getSlotsAvailable() + 1;
+            update(supervisorId, supOpt.get().getResearchArea(), newSlots, jwt);
         }
     }
 
-    public void incrementSlots(UUID supervisorId) throws SQLException {
-        String sql = "UPDATE fyp.supervisors SET slots_available = slots_available + 1 " +
-                     "WHERE supervisor_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, supervisorId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    private Supervisor mapRow(ResultSet rs) throws SQLException {
+    private Supervisor mapRow(JsonObject obj) {
+        JsonObject userObj = obj.getAsJsonObject("users");
         return new Supervisor(
-            UUID.fromString(rs.getString("user_id")),
-            rs.getString("name"),
-            rs.getString("email"),
-            rs.getString("password_hash"),
-            rs.getBoolean("is_active"),
-            rs.getBoolean("is_email_verified"),
-            UUID.fromString(rs.getString("supervisor_id")),
-            rs.getString("employee_id"),
-            rs.getString("research_area"),
-            rs.getInt("slots_available")
+            UUID.fromString(userObj.get("user_id").getAsString()),
+            userObj.has("name") && !userObj.get("name").isJsonNull() ? userObj.get("name").getAsString() : "",
+            userObj.has("email") && !userObj.get("email").isJsonNull() ? userObj.get("email").getAsString() : "",
+            "", // no password hash
+            userObj.has("is_active") && userObj.get("is_active").getAsBoolean(),
+            true, // email verification owned by Supabase Auth
+            UUID.fromString(obj.get("supervisor_id").getAsString()),
+            obj.has("employee_id") && !obj.get("employee_id").isJsonNull() ? obj.get("employee_id").getAsString() : "",
+            obj.has("research_area") && !obj.get("research_area").isJsonNull() ? obj.get("research_area").getAsString() : "",
+            obj.has("slots_available") && !obj.get("slots_available").isJsonNull() ? obj.get("slots_available").getAsInt() : 0
         );
     }
 }

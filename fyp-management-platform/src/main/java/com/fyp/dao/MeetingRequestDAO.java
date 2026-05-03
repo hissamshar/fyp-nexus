@@ -2,89 +2,110 @@ package com.fyp.dao;
 
 import com.fyp.model.MeetingRequest;
 import com.fyp.enums.MeetingStatus;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class MeetingRequestDAO {
 
-    public List<MeetingRequest> findByStudentId(UUID studentId) throws SQLException {
+    public List<MeetingRequest> findByStudentId(UUID studentId, String jwt) throws Exception {
         List<MeetingRequest> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.meeting_requests WHERE student_id = ?::uuid ORDER BY proposed_time DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, studentId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/meeting_requests?student_id=eq." + studentId + "&order=proposed_time.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
             }
         }
         return list;
     }
 
-    public List<MeetingRequest> findBySupervisorId(UUID supervisorId) throws SQLException {
+    public List<MeetingRequest> findBySupervisorId(UUID supervisorId, String jwt) throws Exception {
         List<MeetingRequest> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.meeting_requests WHERE supervisor_id = ?::uuid ORDER BY proposed_time DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, supervisorId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/meeting_requests?supervisor_id=eq." + supervisorId + "&order=proposed_time.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
             }
         }
         return list;
     }
 
-    public UUID insert(MeetingRequest m) throws SQLException {
-        String sql = "INSERT INTO fyp.meeting_requests (proposed_time, location, agenda, status, student_id, supervisor_id) " +
-                     "VALUES (?, ?, ?, ?, ?::uuid, ?::uuid) RETURNING request_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setObject(1, m.getProposedTime());
-            ps.setString(2, m.getLocation());
-            ps.setString(3, m.getAgenda());
-            ps.setString(4, MeetingStatus.REQUESTED.name());
-            ps.setString(5, m.getStudentId().toString());
-            ps.setString(6, m.getSupervisorId().toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("request_id"));
-            }
+    public UUID insert(MeetingRequest m, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        if (m.getProposedTime() != null) json.addProperty("proposed_time", m.getProposedTime().toString());
+        json.addProperty("location", m.getLocation());
+        json.addProperty("agenda", m.getAgenda());
+        json.addProperty("status", MeetingStatus.REQUESTED.name());
+        json.addProperty("student_id", m.getStudentId().toString());
+        json.addProperty("supervisor_id", m.getSupervisorId().toString());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/meeting_requests?select=request_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("request_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.meeting_requests returned no ID.");
+        throw new Exception("Failed to insert meeting request: " + response.body());
     }
 
-    public void updateStatus(UUID requestId, MeetingStatus status) throws SQLException {
-        String sql = "UPDATE fyp.meeting_requests SET status = ? WHERE request_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status.name());
-            ps.setString(2, requestId.toString());
-            ps.executeUpdate();
-        }
+    public void updateStatus(UUID requestId, MeetingStatus status, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("status", status.name());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/meeting_requests?request_id=eq." + requestId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    public void reschedule(UUID requestId, java.time.LocalDateTime counterTime) throws SQLException {
-        String sql = "UPDATE fyp.meeting_requests SET status = 'RESCHEDULED', counter_time = ? " +
-                     "WHERE request_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setObject(1, counterTime);
-            ps.setString(2, requestId.toString());
-            ps.executeUpdate();
-        }
+    public void reschedule(UUID requestId, LocalDateTime counterTime, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("status", "RESCHEDULED");
+        if (counterTime != null) json.addProperty("counter_time", counterTime.toString());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/meeting_requests?request_id=eq." + requestId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    private MeetingRequest mapRow(ResultSet rs) throws SQLException {
+    private MeetingRequest mapRow(JsonObject obj) {
         MeetingRequest m = new MeetingRequest();
-        m.setRequestId(UUID.fromString(rs.getString("request_id")));
-        m.setProposedTime(rs.getTimestamp("proposed_time").toLocalDateTime());
-        m.setLocation(rs.getString("location"));
-        m.setAgenda(rs.getString("agenda"));
-        m.setStatus(MeetingStatus.valueOf(rs.getString("status")));
-        m.setStudentId(UUID.fromString(rs.getString("student_id")));
-        m.setSupervisorId(UUID.fromString(rs.getString("supervisor_id")));
-        Timestamp ct = rs.getTimestamp("counter_time");
-        if (ct != null) m.setCounterTime(ct.toLocalDateTime());
+        m.setRequestId(UUID.fromString(obj.get("request_id").getAsString()));
+        if (obj.has("proposed_time") && !obj.get("proposed_time").isJsonNull()) {
+            m.setProposedTime(LocalDateTime.parse(obj.get("proposed_time").getAsString(), DateTimeFormatter.ISO_DATE_TIME));
+        }
+        m.setLocation(obj.has("location") && !obj.get("location").isJsonNull() ? obj.get("location").getAsString() : "");
+        m.setAgenda(obj.has("agenda") && !obj.get("agenda").isJsonNull() ? obj.get("agenda").getAsString() : "");
+        m.setStatus(MeetingStatus.valueOf(obj.get("status").getAsString()));
+        m.setStudentId(UUID.fromString(obj.get("student_id").getAsString()));
+        m.setSupervisorId(UUID.fromString(obj.get("supervisor_id").getAsString()));
+        if (obj.has("counter_time") && !obj.get("counter_time").isJsonNull()) {
+            m.setCounterTime(LocalDateTime.parse(obj.get("counter_time").getAsString(), DateTimeFormatter.ISO_DATE_TIME));
+        }
         return m;
     }
 }

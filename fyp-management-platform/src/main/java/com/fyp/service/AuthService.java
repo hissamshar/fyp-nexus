@@ -2,145 +2,201 @@ package com.fyp.service;
 
 import com.fyp.dao.*;
 import com.fyp.model.*;
-import com.fyp.util.*;
+import com.fyp.util.SessionManager;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.SQLException;
-import java.util.Optional;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.UUID;
 
-/**
- * Handles login, registration, OTP verification, and password reset.
- * All role-specific profile creation is delegated here.
- */
 public class AuthService {
 
-    private final UserDAO userDAO = new UserDAO();
-    private final StudentDAO studentDAO = new StudentDAO();
-    private final SupervisorDAO supervisorDAO = new SupervisorDAO();
-    private final ExaminerDAO examinerDAO = new ExaminerDAO();
-    private final AdminDAO adminDAO = new AdminDAO();
-    private final IndustryPartnerDAO partnerDAO = new IndustryPartnerDAO();
-
-    private static final int MAX_LOGIN_ATTEMPTS = 5;
-
     /**
-     * Authenticate a user. Returns the User object on success, empty on failure.
-     * Throws an exception if the account is locked.
+     * Login with email + password. Stores typed profile in SessionManager.
      */
-    public Optional<User> login(String email, String password) throws Exception {
-        Optional<User> opt = userDAO.findByEmail(email);
-        if (opt.isEmpty()) return Optional.empty();
+    public static boolean login(String email, String password) {
+        try {
+            JsonObject json = new JsonObject();
+            json.addProperty("email", email);
+            json.addProperty("password", password);
 
-        User user = opt.get();
+            HttpRequest.Builder request = HttpRequest.newBuilder()
+                    .uri(URI.create(SupabaseClient.getBaseUrl() + "/auth/v1/token?grant_type=password"))
+                    .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
 
-        if (!user.isActive()) throw new Exception("Account is deactivated. Contact the administrator.");
-        if (!user.isEmailVerified()) throw new Exception("Email not verified. Please verify your email first.");
+            HttpResponse<String> response = SupabaseClient.sendRequest(request);
 
-        int attempts = userDAO.getFailedAttempts(user.getUserId());
-        if (attempts >= MAX_LOGIN_ATTEMPTS) {
-            throw new Exception("Account locked after " + MAX_LOGIN_ATTEMPTS +
-                    " failed attempts. Contact the administrator to unlock.");
+            if (response.statusCode() == 200) {
+                JsonObject body = JsonParser.parseString(response.body()).getAsJsonObject();
+                String token = body.get("access_token").getAsString();
+                JsonObject userObj = body.getAsJsonObject("user");
+                UUID userId = UUID.fromString(userObj.get("id").getAsString());
+
+                return fetchAndStoreProfile(userId, token);
+            }
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-
-        if (!PasswordUtil.verify(password, user.getPasswordHash())) {
-            userDAO.incrementFailedAttempts(user.getUserId());
-            AuditLogger.log(user.getUserId(), "LOGIN_FAILED", "Invalid password attempt");
-            return Optional.empty();
-        }
-
-        userDAO.resetFailedAttempts(user.getUserId());
-        AuditLogger.logLogin(user.getUserId());
-        return Optional.of(buildTypedUser(user));
     }
 
     /**
-     * Register a new user. Sends OTP for email verification.
-     * Returns the new userId on success.
+     * Register a new user via Supabase Auth.
+     * Returns "AUTO_LOGGED_IN" if email confirmation is disabled, or the userId string otherwise.
      */
-    public UUID register(String name, String email, String password,
-                         String role, String department, String companyName) throws Exception {
+    public static String signup(String email, String password, String name, String role) {
+        try {
+            JsonObject json = new JsonObject();
+            json.addProperty("email", email);
+            json.addProperty("password", password);
 
-        // Validate password strength
-        String weakness = PasswordUtil.getWeaknessReason(password);
-        if (weakness != null) throw new Exception(weakness);
+            JsonObject meta = new JsonObject();
+            meta.addProperty("name", name);
+            meta.addProperty("role", role);
+            json.add("data", meta);
 
-        // Check duplicate email
-        if (userDAO.emailExists(email)) {
-            throw new Exception("DUPLICATE_EMAIL");
+            HttpRequest.Builder request = HttpRequest.newBuilder()
+                    .uri(URI.create(SupabaseClient.getBaseUrl() + "/auth/v1/signup"))
+                    .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+
+            HttpResponse<String> response = SupabaseClient.sendRequest(request);
+            System.out.println("[AuthService] Signup Response Code: " + response.statusCode());
+            System.out.println("[AuthService] Signup Response Body: " + response.body());
+
+            if (response.statusCode() == 200 || response.statusCode() == 201) {
+                JsonObject body = JsonParser.parseString(response.body()).getAsJsonObject();
+
+                // Email confirmation disabled — session returned immediately
+                if (body.has("access_token") && !body.get("access_token").isJsonNull()) {
+                    String token = body.get("access_token").getAsString();
+                    UUID userId = UUID.fromString(body.getAsJsonObject("user").get("id").getAsString());
+                    fetchAndStoreProfile(userId, token);
+                    return "AUTO_LOGGED_IN";
+                }
+                if (body.has("session") && !body.get("session").isJsonNull()) {
+                    JsonObject session = body.getAsJsonObject("session");
+                    String token = session.get("access_token").getAsString();
+                    UUID userId = UUID.fromString(session.getAsJsonObject("user").get("id").getAsString());
+                    fetchAndStoreProfile(userId, token);
+                    return "AUTO_LOGGED_IN";
+                }
+
+                if (body.has("id")) return body.get("id").getAsString();
+                if (body.has("user") && !body.get("user").isJsonNull())
+                    return body.getAsJsonObject("user").get("id").getAsString();
+                return "OK";
+            } else {
+                JsonObject err = JsonParser.parseString(response.body()).getAsJsonObject();
+                String msg = err.has("msg") ? err.get("msg").getAsString()
+                           : err.has("message") ? err.get("message").getAsString()
+                           : err.has("error_description") ? err.get("error_description").getAsString()
+                           : "Supabase Error: " + response.statusCode();
+                throw new Exception(msg);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         }
+    }
 
-        String hash = PasswordUtil.hash(password);
-        UUID userId = userDAO.insert(name, email, hash, role);
+    /**
+     * Verify email OTP. On success, fetches and stores typed profile.
+     */
+    public static boolean verifyEmailOtp(String email, String otp) {
+        try {
+            JsonObject json = new JsonObject();
+            json.addProperty("email", email);
+            json.addProperty("token", otp);
+            json.addProperty("type", "signup");
 
-        // Create role-specific profile record
-        switch (role) {
-            case "STUDENT"          -> studentDAO.insert(userId, department != null ? department : "CS", 0.0);
-            case "SUPERVISOR"       -> supervisorDAO.insert(userId, "", "", 5);
-            case "EXAMINER"         -> examinerDAO.insert(userId, false);
-            case "ADMIN"            -> adminDAO.insert(userId, java.util.List.of("ALL"));
-            case "INDUSTRY_PARTNER" -> partnerDAO.insert(userId, companyName != null ? companyName : "", email);
+            HttpRequest.Builder request = HttpRequest.newBuilder()
+                    .uri(URI.create(SupabaseClient.getBaseUrl() + "/auth/v1/verify"))
+                    .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+
+            HttpResponse<String> response = SupabaseClient.sendRequest(request);
+
+            if (response.statusCode() == 200) {
+                JsonObject body = JsonParser.parseString(response.body()).getAsJsonObject();
+                if (body.has("access_token")) {
+                    String token = body.get("access_token").getAsString();
+                    UUID userId = UUID.fromString(body.getAsJsonObject("user").get("id").getAsString());
+                    fetchAndStoreProfile(userId, token);
+                }
+                return true;
+            }
+            System.err.println("[AuthService] OTP verification failed: " + response.statusCode() + " " + response.body());
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-
-        // Send OTP
-        String otp = OTPService.generateAndStore(userId, "EMAIL_VERIFY");
-        EmailService.sendOTP(email, otp);
-        AuditLogger.logAccountChange(userId, "REGISTERED role=" + role);
-
-        return userId;
     }
 
-    /**
-     * Verify email OTP. Returns true on success and activates the account.
-     */
-    public boolean verifyEmail(UUID userId, String otp) throws Exception {
-        boolean valid = OTPService.verify(userId, otp, "EMAIL_VERIFY");
-        if (valid) {
-            userDAO.setEmailVerified(userId, true);
-            AuditLogger.logAccountChange(userId, "EMAIL_VERIFIED");
+    public static boolean resendOtp(String email) {
+        try {
+            JsonObject json = new JsonObject();
+            json.addProperty("type", "signup");
+            json.addProperty("email", email);
+
+            HttpRequest.Builder request = HttpRequest.newBuilder()
+                    .uri(URI.create(SupabaseClient.getBaseUrl() + "/auth/v1/resend"))
+                    .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+
+            return SupabaseClient.sendRequest(request).statusCode() == 200;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-        return valid;
     }
 
     /**
-     * Initiate password reset — sends OTP to the user's email.
+     * Fetches the role-specific profile from fyp schema and stores the typed
+     * object (Student / Supervisor / Examiner / Admin / IndustryPartner) in SessionManager.
+     * Falls back to a plain User if the role-specific row doesn't exist yet.
      */
-    public void initiatePasswordReset(String email) throws Exception {
-        Optional<User> opt = userDAO.findByEmail(email);
-        if (opt.isEmpty()) return; // Silent fail for security
-        User user = opt.get();
-        String otp = OTPService.generateAndStore(user.getUserId(), "PASSWORD_RESET");
-        EmailService.sendOTP(email, otp);
-    }
+    private static boolean fetchAndStoreProfile(UUID userId, String token) {
+        try {
+            // Get base user row to determine role
+            HttpRequest.Builder userReq = HttpRequest.newBuilder()
+                    .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/users?user_id=eq." + userId))
+                    .GET();
+            HttpResponse<String> userRes = SupabaseClient.sendAuthenticatedRequest(userReq, token);
 
-    /**
-     * Complete password reset using OTP.
-     */
-    public boolean resetPassword(String email, String otp, String newPassword) throws Exception {
-        Optional<User> opt = userDAO.findByEmail(email);
-        if (opt.isEmpty()) return false;
+            if (userRes.statusCode() != 200 || userRes.body().equals("[]")) {
+                System.err.println("[AuthService] fyp.users row not found for " + userId);
+                return false;
+            }
 
-        User user = opt.get();
-        if (!OTPService.verify(user.getUserId(), otp, "PASSWORD_RESET")) return false;
+            com.google.gson.JsonObject fypUser = JsonParser.parseString(userRes.body())
+                    .getAsJsonArray().get(0).getAsJsonObject();
+            String role = fypUser.get("role").getAsString();
 
-        String weakness = PasswordUtil.getWeaknessReason(newPassword);
-        if (weakness != null) throw new Exception(weakness);
+            User profile = switch (role) {
+                case "STUDENT"          -> new StudentDAO().findByUserId(userId, token).orElse(null);
+                case "SUPERVISOR"       -> new SupervisorDAO().findByUserId(userId, token).orElse(null);
+                case "EXAMINER"         -> new ExaminerDAO().findByUserId(userId, token).orElse(null);
+                case "ADMIN"            -> new AdminDAO().findByUserId(userId, token).orElse(null);
+                case "INDUSTRY_PARTNER" -> new IndustryPartnerDAO().findByUserId(userId, token).orElse(null);
+                default                 -> null;
+            };
 
-        userDAO.updatePasswordHash(user.getUserId(), PasswordUtil.hash(newPassword));
-        AuditLogger.logPasswordReset(user.getUserId());
-        return true;
-    }
+            if (profile == null) {
+                // Role-specific row missing (trigger may not have run yet) — fall back to plain User
+                System.err.println("[AuthService] Role-specific profile missing for " + role + " " + userId + ". Using base User.");
+                String name  = fypUser.has("name")  ? fypUser.get("name").getAsString()  : "";
+                String email = fypUser.has("email") ? fypUser.get("email").getAsString() : "";
+                profile = new User(userId, name, email, "", true, true, role) {};
+            }
 
-    /**
-     * Build the correctly-typed user object based on role (for SessionManager).
-     */
-    public User buildTypedUser(User base) throws SQLException {
-        return switch (base.getRole()) {
-            case "STUDENT"          -> studentDAO.findByUserId(base.getUserId()).map(u -> (User) u).orElse(base);
-            case "SUPERVISOR"       -> supervisorDAO.findByUserId(base.getUserId()).map(u -> (User) u).orElse(base);
-            case "EXAMINER"         -> examinerDAO.findByUserId(base.getUserId()).map(u -> (User) u).orElse(base);
-            case "ADMIN"            -> adminDAO.findByUserId(base.getUserId()).map(u -> (User) u).orElse(base);
-            case "INDUSTRY_PARTNER" -> partnerDAO.findByUserId(base.getUserId()).map(u -> (User) u).orElse(base);
-            default                 -> base;
-        };
+            SessionManager.setCurrentUser(profile, token);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

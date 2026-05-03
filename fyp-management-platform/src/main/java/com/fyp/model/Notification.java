@@ -46,4 +46,7 @@ public class Notification {
     public void setRead(boolean read)                { isRead = read; }
     public void setRecipientId(UUID recipientId)     { this.recipientId = recipientId; }
     public void setCreatedAt(LocalDateTime createdAt){ this.createdAt = createdAt; }
+
+    // Alias — controllers use getNotificationId()
+    public UUID getNotificationId() { return notifId; }
 }

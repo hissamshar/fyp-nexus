@@ -6,53 +6,45 @@ import java.util.UUID;
 
 public class Deliverable {
     private UUID fileId;
+    private String title;        // UI-friendly title
     private String fileName;
     private String fileType;
+    private String status;       // e.g. "UPLOADED", "REVIEWED"
     private LocalDateTime uploadTimestamp;
     private String filePath;
     private UUID milestoneId;
     private UUID studentId;
+    private String description;
 
     public Deliverable() {}
 
-    public Deliverable(UUID fileId, String fileName, String fileType,
-                       LocalDateTime uploadTimestamp, String filePath,
-                       UUID milestoneId, UUID studentId) {
-        this.fileId          = fileId;
-        this.fileName        = fileName;
-        this.fileType        = fileType;
-        this.uploadTimestamp = uploadTimestamp;
-        this.filePath        = filePath;
-        this.milestoneId     = milestoneId;
-        this.studentId       = studentId;
-    }
+    public File download()        { return new File(filePath != null ? filePath : ""); }
+    public boolean verifyChecksum(){ return filePath != null && new File(filePath).exists(); }
+    public boolean delete()       { return filePath != null && new File(filePath).delete(); }
 
-    public File download() {
-        return new File(filePath);
-    }
-
-    public boolean verifyChecksum() {
-        // Delegates to FileValidator
-        return new File(filePath).exists();
-    }
-
-    public boolean delete() {
-        return new File(filePath).delete();
-    }
-
-    public UUID getFileId()               { return fileId; }
-    public String getFileName()           { return fileName; }
-    public String getFileType()           { return fileType; }
+    // ── Getters ────────────────────────────────────────────────────────────────
+    public UUID getFileId()                 { return fileId; }
+    public String getTitle()               { return title != null ? title : fileName; }
+    public String getFileName()            { return fileName; }
+    public String getFileType()            { return fileType; }
+    public String getStatus()              { return status != null ? status : "UPLOADED"; }
+    public LocalDateTime getUploadedAt()   { return uploadTimestamp; }
     public LocalDateTime getUploadTimestamp(){ return uploadTimestamp; }
-    public String getFilePath()           { return filePath; }
-    public UUID getMilestoneId()          { return milestoneId; }
-    public UUID getStudentId()            { return studentId; }
+    public String getFilePath()            { return filePath; }
+    public UUID getMilestoneId()           { return milestoneId; }
+    public UUID getStudentId()             { return studentId; }
+    public String getDescription()         { return description; }
 
-    public void setFileId(UUID fileId)                         { this.fileId = fileId; }
-    public void setFileName(String fileName)                   { this.fileName = fileName; }
-    public void setFileType(String fileType)                   { this.fileType = fileType; }
+    // ── Setters ────────────────────────────────────────────────────────────────
+    public void setFileId(UUID fileId)                          { this.fileId = fileId; }
+    public void setTitle(String title)                          { this.title = title; this.fileName = title; }
+    public void setFileName(String fileName)                    { this.fileName = fileName; }
+    public void setFileType(String fileType)                    { this.fileType = fileType; }
+    public void setStatus(String status)                        { this.status = status; }
     public void setUploadTimestamp(LocalDateTime uploadTimestamp){ this.uploadTimestamp = uploadTimestamp; }
-    public void setFilePath(String filePath)                   { this.filePath = filePath; }
-    public void setMilestoneId(UUID milestoneId)               { this.milestoneId = milestoneId; }
-    public void setStudentId(UUID studentId)                   { this.studentId = studentId; }
+    public void setFilePath(String filePath)                    { this.filePath = filePath; }
+    public void setMilestoneId(UUID milestoneId)                { this.milestoneId = milestoneId; }
+    public void setStudentId(UUID studentId)                    { this.studentId = studentId; }
+    public void setDescription(String description)              { this.description = description; }
 }
+

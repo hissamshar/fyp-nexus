@@ -1,13 +1,14 @@
 package com.fyp.util;
 
+import com.google.gson.JsonObject;
+
 import java.net.InetAddress;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.time.LocalDateTime;
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.util.UUID;
 
 /**
- * Inserts audit log entries into fyp.audit_logs.
+ * Inserts audit log entries into fyp.audit_logs via Supabase REST API.
  * Call on every key user action: login, logout, proposal submit,
  * file upload, grade change, account change.
  */
@@ -36,18 +37,19 @@ public class AuditLogger {
             ip = "unknown";
         }
 
-        String sql = "INSERT INTO fyp.audit_logs (user_id, action, ip_address, timestamp, details) " +
-                     "VALUES (?::uuid, ?, ?, ?, ?)";
+        String jwt = SessionManager.getJwtToken();
+        if (jwt == null) return; // Not logged in, skip audit
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId != null ? userId.toString() : null);
-            ps.setString(2, action);
-            ps.setString(3, ip);
-            ps.setObject(4, LocalDateTime.now());
-            ps.setString(5, details);
-            ps.executeUpdate();
-        }
+        JsonObject json = new JsonObject();
+        if (userId != null) json.addProperty("user_id", userId.toString());
+        json.addProperty("action", action);
+        json.addProperty("ip_address", ip);
+        json.addProperty("details", details);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/audit_logs"))
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
     // ── Convenience helpers ────────────────────────────────────────────────────

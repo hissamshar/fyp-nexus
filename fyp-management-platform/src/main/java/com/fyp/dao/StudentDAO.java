@@ -1,9 +1,15 @@
 package com.fyp.dao;
 
 import com.fyp.model.Student;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,96 +17,90 @@ import java.util.UUID;
 
 public class StudentDAO {
 
-    public Optional<Student> findByUserId(UUID userId) throws SQLException {
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   s.student_id, s.department, s.cgpa
-            FROM fyp.users u
-            JOIN fyp.students s ON s.user_id = u.user_id
-            WHERE u.user_id = ?::uuid
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<Student> findByUserId(UUID userId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/students?select=student_id,department,cgpa,users(user_id,name,email,is_active)&user_id=eq." + userId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public Optional<Student> findByStudentId(UUID studentId) throws SQLException {
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   s.student_id, s.department, s.cgpa
-            FROM fyp.users u
-            JOIN fyp.students s ON s.user_id = u.user_id
-            WHERE s.student_id = ?::uuid
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, studentId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<Student> findByStudentId(UUID studentId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/students?select=student_id,department,cgpa,users(user_id,name,email,is_active)&student_id=eq." + studentId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public List<Student> findAll() throws SQLException {
+    public List<Student> findAll(String jwt) throws Exception {
         List<Student> list = new ArrayList<>();
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   s.student_id, s.department, s.cgpa
-            FROM fyp.users u
-            JOIN fyp.students s ON s.user_id = u.user_id
-            ORDER BY u.name
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/students?select=student_id,department,cgpa,users(user_id,name,email,is_active)"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
+            }
         }
         return list;
     }
 
-    public UUID insert(UUID userId, String department, double cgpa) throws SQLException {
-        String sql = "INSERT INTO fyp.students (user_id, department, cgpa) " +
-                     "VALUES (?::uuid, ?, ?) RETURNING student_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            ps.setString(2, department);
-            ps.setDouble(3, cgpa);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("student_id"));
-            }
+    public UUID insert(UUID userId, String department, double cgpa, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("user_id", userId.toString());
+        json.addProperty("department", department);
+        json.addProperty("cgpa", cgpa);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/students?select=student_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("student_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.students returned no ID.");
+        throw new Exception("Failed to insert student: " + response.body());
     }
 
-    public void update(UUID studentId, String department, double cgpa) throws SQLException {
-        String sql = "UPDATE fyp.students SET department = ?, cgpa = ? WHERE student_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, department);
-            ps.setDouble(2, cgpa);
-            ps.setString(3, studentId.toString());
-            ps.executeUpdate();
-        }
+    public void update(UUID studentId, String department, double cgpa, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("department", department);
+        json.addProperty("cgpa", cgpa);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/students?student_id=eq." + studentId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
     }
 
-    private Student mapRow(ResultSet rs) throws SQLException {
+    private Student mapRow(JsonObject obj) {
+        JsonObject userObj = obj.getAsJsonObject("users");
         return new Student(
-            UUID.fromString(rs.getString("user_id")),
-            rs.getString("name"),
-            rs.getString("email"),
-            rs.getString("password_hash"),
-            rs.getBoolean("is_active"),
-            rs.getBoolean("is_email_verified"),
-            UUID.fromString(rs.getString("student_id")),
-            rs.getString("department"),
-            rs.getDouble("cgpa")
+            UUID.fromString(userObj.get("user_id").getAsString()),
+            userObj.has("name") && !userObj.get("name").isJsonNull() ? userObj.get("name").getAsString() : "",
+            userObj.has("email") && !userObj.get("email").isJsonNull() ? userObj.get("email").getAsString() : "",
+            "", // no password hash
+            userObj.has("is_active") && userObj.get("is_active").getAsBoolean(),
+            true, // email verification owned by Supabase Auth
+            UUID.fromString(obj.get("student_id").getAsString()),
+            obj.has("department") && !obj.get("department").isJsonNull() ? obj.get("department").getAsString() : "",
+            obj.has("cgpa") && !obj.get("cgpa").isJsonNull() ? obj.get("cgpa").getAsDouble() : 0.0
         );
     }
 }

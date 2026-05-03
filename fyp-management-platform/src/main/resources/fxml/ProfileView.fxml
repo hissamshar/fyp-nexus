@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.ProfileController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="My Profile" styleClass="page-title"/>
+
+    <HBox spacing="20">
+        <!-- Profile card -->
+        <VBox styleClass="content-card" spacing="16" prefWidth="280" alignment="CENTER">
+            <Label fx:id="avatarLabel" text="👤" style="-fx-font-size:72; -fx-text-fill:#818CF8;"/>
+            <Label fx:id="profileName" text="—" style="-fx-text-fill:#F8FAFC; -fx-font-size:20; -fx-font-weight:bold;"/>
+            <Label fx:id="profileRole" text="—" style="-fx-text-fill:#818CF8; -fx-font-size:14;"/>
+            <Label fx:id="profileEmail" text="—" style="-fx-text-fill:#94A3B8;"/>
+            <Separator/>
+            <Label fx:id="profileMember" text="" style="-fx-text-fill:#64748B; -fx-font-size:12;"/>
+        </VBox>
+
+        <!-- Edit form -->
+        <VBox styleClass="content-card" spacing="14" HBox.hgrow="ALWAYS">
+            <Label text="Edit Profile" styleClass="card-title"/>
+            <Label text="Full Name" styleClass="field-label"/>
+            <TextField fx:id="nameField" styleClass="text-field-dark" id="profileNameField"/>
+
+            <Label text="Email (read-only)" styleClass="field-label"/>
+            <TextField fx:id="emailField" styleClass="text-field-dark" editable="false" id="profileEmailField"/>
+
+            <Separator style="-fx-background-color:#334155;"/>
+            <Label text="Change Password" styleClass="card-title"/>
+
+            <Label text="Current Password" styleClass="field-label"/>
+            <PasswordField fx:id="currentPassField" styleClass="text-field-dark" id="currentPassField"/>
+
+            <Label text="New Password" styleClass="field-label"/>
+            <PasswordField fx:id="newPassField" styleClass="text-field-dark" id="newPassField"/>
+
+            <Label text="Confirm New Password" styleClass="field-label"/>
+            <PasswordField fx:id="confirmPassField" styleClass="text-field-dark" id="confirmPassField"/>
+
+            <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
+
+            <HBox spacing="12">
+                <Button text="Update Profile"   styleClass="btn-primary"      onAction="#handleUpdateProfile"  id="updateProfileBtn"/>
+                <Button text="Change Password"  styleClass="btn-outline-small" onAction="#handleChangePassword" id="changePasswordBtn"/>
+            </HBox>
+        </VBox>
+    </HBox>
+</VBox>

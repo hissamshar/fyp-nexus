@@ -53,4 +53,9 @@ public class MeetingRequest {
     public void setCounterTime(LocalDateTime counterTime)  { this.counterTime = counterTime; }
     public void setStudentId(UUID studentId)               { this.studentId = studentId; }
     public void setSupervisorId(UUID supervisorId)         { this.supervisorId = supervisorId; }
+
+    // Alias — controllers use meetingId; DB field is requestId
+    public UUID getMeetingId()             { return requestId; }
+    public void setMeetingId(UUID id)      { this.requestId = id; }
 }
+

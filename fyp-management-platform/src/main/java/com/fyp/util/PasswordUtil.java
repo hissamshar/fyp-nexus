@@ -1,10 +1,10 @@
 package com.fyp.util;
 
-import org.mindrot.jbcrypt.BCrypt;
 import java.util.regex.Pattern;
 
 /**
- * BCrypt password hashing and strength validation.
+ * Password strength validation.
+ * With Supabase Auth handling hashing, this class only validates strength.
  */
 public class PasswordUtil {
 
@@ -16,22 +16,19 @@ public class PasswordUtil {
     private PasswordUtil() {}
 
     /**
-     * Hash a plain-text password using BCrypt with cost factor 12.
+     * @deprecated Supabase Auth handles password hashing. Kept as stub.
      */
     public static String hash(String plain) {
-        return BCrypt.hashpw(plain, BCrypt.gensalt(12));
+        // Supabase handles password hashing server-side
+        return plain;
     }
 
     /**
-     * Verify a plain-text password against a stored BCrypt hash.
+     * @deprecated Supabase Auth handles password verification. Kept as stub.
      */
     public static boolean verify(String plain, String hashed) {
-        if (plain == null || hashed == null) return false;
-        try {
-            return BCrypt.checkpw(plain, hashed);
-        } catch (Exception e) {
-            return false;
-        }
+        // Supabase handles password verification server-side
+        return plain != null && plain.equals(hashed);
     }
 
     /**

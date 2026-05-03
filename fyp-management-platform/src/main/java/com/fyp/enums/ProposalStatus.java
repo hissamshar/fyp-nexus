@@ -1,5 +1,5 @@
 package com.fyp.enums;
 
 public enum ProposalStatus {
-    DRAFT, PENDING, APPROVED, REJECTED
+    DRAFT, PENDING, UNDER_REVIEW, APPROVED, REJECTED, REVISION_REQUESTED
 }

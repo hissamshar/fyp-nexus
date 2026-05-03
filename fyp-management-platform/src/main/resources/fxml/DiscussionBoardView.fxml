@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.DiscussionBoardController"
+      styleClass="dashboard-content" spacing="16" style="-fx-background-color:#0F172A;">
+
+    <Label text="Discussion Board" styleClass="page-title"/>
+
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+        <!-- Threads panel -->
+        <VBox styleClass="content-card" spacing="12" prefWidth="280">
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <Label text="Threads" styleClass="card-title" HBox.hgrow="ALWAYS"/>
+                <Button text="+" styleClass="btn-outline-small" onAction="#handleNewThread" id="newThreadBtn"/>
+            </HBox>
+            <ListView fx:id="threadList" VBox.vgrow="ALWAYS" prefHeight="480" id="threadList"
+                      style="-fx-background-color:#0F172A; -fx-border-color:#334155; -fx-border-radius:6;"/>
+        </VBox>
+
+        <!-- Posts panel -->
+        <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+            <Label fx:id="threadTitleLabel" text="Select a thread" styleClass="card-title"/>
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="transparent-scroll"
+                        prefHeight="380" id="postsScroll">
+                <VBox fx:id="postsContainer" spacing="8" style="-fx-padding:8;"/>
+            </ScrollPane>
+
+            <!-- Reply box -->
+            <Separator style="-fx-background-color:#334155;"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <TextArea fx:id="replyField" promptText="Write a reply..." styleClass="text-field-dark"
+                          prefHeight="70" HBox.hgrow="ALWAYS" wrapText="true" id="replyField"/>
+                <Button text="Send" styleClass="btn-primary" onAction="#handleSendReply" id="sendReplyBtn"/>
+            </HBox>
+        </VBox>
+    </HBox>
+</VBox>

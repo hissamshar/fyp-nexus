@@ -10,18 +10,24 @@ import java.time.LocalDateTime;
 public class SessionManager {
 
     private static User currentUser;
+    private static String jwtToken;
     private static LocalDateTime lastActivityTime;
     private static final long TIMEOUT_MINUTES = 30;
 
     private SessionManager() {}
 
-    public static void setCurrentUser(User user) {
+    public static void setCurrentUser(User user, String token) {
         currentUser      = user;
+        jwtToken         = token;
         lastActivityTime = LocalDateTime.now();
     }
 
     public static User getCurrentUser() {
         return currentUser;
+    }
+
+    public static String getJwtToken() {
+        return jwtToken;
     }
 
     /**
@@ -45,6 +51,7 @@ public class SessionManager {
      */
     public static void clearSession() {
         currentUser      = null;
+        jwtToken         = null;
         lastActivityTime = null;
     }
 

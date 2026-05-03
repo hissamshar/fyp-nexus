@@ -1,6 +1,6 @@
 package com.fyp;
 
-import com.fyp.util.DBConnection;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -59,9 +59,27 @@ public class Main extends Application {
         }
     }
 
+    public static void loadViewWithContext(String viewName, java.util.function.Consumer<Object> contextSetter) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                Main.class.getResource("/fxml/" + viewName + ".fxml"));
+            Parent root = loader.load();
+            if (contextSetter != null) {
+                contextSetter.accept(loader.getController());
+            }
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(
+                Main.class.getResource("/css/main.css").toExternalForm());
+            primaryStage.setScene(scene);
+            primaryStage.centerOnScreen();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void stop() {
-        DBConnection.shutdown();
+        // No connection pool to shut down — REST API is stateless
     }
 
     public static void main(String[] args) {

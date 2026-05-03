@@ -1,6 +1,7 @@
 package com.fyp.controller;
 
 import com.fyp.Main;
+
 import com.fyp.service.AuthService;
 import com.fyp.util.OTPService;
 import javafx.concurrent.Task;
@@ -16,7 +17,7 @@ public class OTPVerificationController {
     @FXML private Button verifyBtn;
     @FXML private ProgressIndicator loadingIndicator;
 
-    private final AuthService authService = new AuthService();
+
     private UUID userId;
     private String email;
     private String purpose; // "EMAIL_VERIFY" or "PASSWORD_RESET"
@@ -25,14 +26,14 @@ public class OTPVerificationController {
         this.userId  = userId;
         this.email   = email;
         this.purpose = purpose;
-        instructionLabel.setText("A 6-digit code was sent to " + email + ".");
+        instructionLabel.setText("A verification code was sent to " + email + ".");
     }
 
     @FXML
     private void handleVerify() {
         String otp = otpField.getText().trim();
-        if (otp.length() != 6) {
-            showError("Please enter the 6-digit code.");
+        if (otp.isEmpty()) {
+            showError("Please enter the verification code.");
             return;
         }
 
@@ -40,9 +41,11 @@ public class OTPVerificationController {
         Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
-                return "EMAIL_VERIFY".equals(purpose)
-                    ? authService.verifyEmail(userId, otp)
-                    : OTPService.verify(userId, otp, purpose);
+                if ("EMAIL_VERIFY".equals(purpose)) {
+                    return AuthService.verifyEmailOtp(email, otp);
+                } else {
+                    return OTPService.verify(userId, otp, purpose);
+                }
             }
         };
 
@@ -50,8 +53,8 @@ public class OTPVerificationController {
             setLoading(false);
             if (task.getValue()) {
                 if ("EMAIL_VERIFY".equals(purpose)) {
-                    showInfo("Email verified! You can now log in.");
-                    Main.loadView("LoginView");
+                    showInfo("Email verified! You are now logged in.");
+                    Main.loadView("DashboardView"); // Or whatever the landing view is
                 } else {
                     Main.loadView("LoginView");
                 }
@@ -70,16 +73,23 @@ public class OTPVerificationController {
 
     @FXML
     private void handleResend() {
-        if (userId == null) return;
-        Task<Void> task = new Task<>() {
+        if (email == null) return;
+        Task<Boolean> task = new Task<>() {
             @Override
-            protected Void call() throws Exception {
-                String otp = OTPService.generateAndStore(userId, purpose);
-                com.fyp.util.EmailService.sendOTP(email, otp);
-                return null;
+            protected Boolean call() throws Exception {
+                if ("EMAIL_VERIFY".equals(purpose)) {
+                    return AuthService.resendOtp(email);
+                } else {
+                    String otp = OTPService.generateAndStore(userId, purpose);
+                    com.fyp.util.EmailService.sendOTP(email, otp);
+                    return true;
+                }
             }
         };
-        task.setOnSucceeded(e -> showInfo("New code sent to " + email));
+        task.setOnSucceeded(e -> {
+            if (task.getValue()) showInfo("New code sent to " + email);
+            else showError("Failed to resend code.");
+        });
         task.setOnFailed(e -> showError("Failed to resend code."));
         new Thread(task).start();
     }

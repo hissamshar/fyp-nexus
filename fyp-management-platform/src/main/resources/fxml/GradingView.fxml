@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.GradingController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="Grade Projects" styleClass="page-title"/>
+
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <Label text="Select Project:" styleClass="field-label"/>
+        <ComboBox fx:id="projectCombo" promptText="Choose project to grade" styleClass="combo-dark"
+                  prefWidth="300" id="gradingProjectCombo"/>
+        <Button text="Load Rubric" styleClass="btn-outline-small" onAction="#handleLoadRubric" id="loadRubricBtn"/>
+    </HBox>
+
+    <!-- Rubric table -->
+    <VBox styleClass="content-card" spacing="12">
+        <Label text="Rubric Criteria" styleClass="card-title"/>
+        <TableView fx:id="rubricTable" prefHeight="280" styleClass="dark-table" id="rubricTable">
+            <columns>
+                <TableColumn fx:id="criterionCol"   text="Criterion"    prefWidth="200"/>
+                <TableColumn fx:id="maxScoreCol"    text="Max Score"    prefWidth="100"/>
+                <TableColumn fx:id="scoreCol"       text="Score Given"  prefWidth="120"/>
+                <TableColumn fx:id="commentsCol"    text="Comments"     prefWidth="250"/>
+            </columns>
+        </TableView>
+
+        <HBox spacing="16" alignment="CENTER_LEFT">
+            <Label text="Total Score:" style="-fx-text-fill:#94A3B8; -fx-font-weight:bold;"/>
+            <Label fx:id="totalScoreLabel" text="0 / 0" style="-fx-text-fill:#818CF8; -fx-font-size:20; -fx-font-weight:bold;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Grade:" style="-fx-text-fill:#94A3B8; -fx-font-weight:bold;"/>
+            <Label fx:id="gradeLabel" text="—" style="-fx-text-fill:#10B981; -fx-font-size:24; -fx-font-weight:bold;"/>
+        </HBox>
+    </VBox>
+
+    <!-- Feedback -->
+    <VBox styleClass="content-card" spacing="12">
+        <Label text="Overall Feedback" styleClass="field-label"/>
+        <TextArea fx:id="overallFeedback" promptText="Enter overall feedback for this project..."
+                  styleClass="text-field-dark" prefHeight="100" wrapText="true" id="overallFeedback"/>
+
+        <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
+        <HBox spacing="12">
+            <Button text="Save Draft" styleClass="btn-outline-small" onAction="#handleSaveDraft" id="saveGradeDraftBtn"/>
+            <Button text="Publish Grades" styleClass="btn-primary" onAction="#handlePublish" id="publishGradeBtn"
+                    style="-fx-background-color:linear-gradient(to right,#059669,#10B981);"/>
+        </HBox>
+    </VBox>
+</VBox>

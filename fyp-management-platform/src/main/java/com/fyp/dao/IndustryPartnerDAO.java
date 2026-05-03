@@ -1,74 +1,85 @@
 package com.fyp.dao;
 
 import com.fyp.model.IndustryPartner;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
-import java.util.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class IndustryPartnerDAO {
 
-    public Optional<IndustryPartner> findByUserId(UUID userId) throws SQLException {
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   ip.partner_id, ip.company_name, ip.contact_email
-            FROM fyp.users u
-            JOIN fyp.industry_partners ip ON ip.user_id = u.user_id
-            WHERE u.user_id = ?::uuid
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<IndustryPartner> findByUserId(UUID userId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_partners?select=partner_id,company_name,contact_email,users(user_id,name,email,is_active,is_email_verified)&user_id=eq." + userId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public List<IndustryPartner> findAll() throws SQLException {
+    public List<IndustryPartner> findAll(String jwt) throws Exception {
         List<IndustryPartner> list = new ArrayList<>();
-        String sql = """
-            SELECT u.user_id, u.name, u.email, u.password_hash, u.is_active, u.is_email_verified,
-                   ip.partner_id, ip.company_name, ip.contact_email
-            FROM fyp.users u
-            JOIN fyp.industry_partners ip ON ip.user_id = u.user_id
-            WHERE u.is_active = TRUE ORDER BY u.name
-            """;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_partners?select=partner_id,company_name,contact_email,users(user_id,name,email,is_active,is_email_verified)"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                JsonObject obj = el.getAsJsonObject();
+                if (obj.has("users") && obj.get("users").getAsJsonObject().get("is_active").getAsBoolean()) {
+                    list.add(mapRow(obj));
+                }
+            }
         }
         return list;
     }
 
-    public UUID insert(UUID userId, String companyName, String contactEmail) throws SQLException {
-        String sql = "INSERT INTO fyp.industry_partners (user_id, company_name, contact_email) " +
-                     "VALUES (?::uuid, ?, ?) RETURNING partner_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.toString());
-            ps.setString(2, companyName);
-            ps.setString(3, contactEmail);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("partner_id"));
-            }
+    public UUID insert(UUID userId, String companyName, String contactEmail, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("user_id", userId.toString());
+        json.addProperty("company_name", companyName);
+        json.addProperty("contact_email", contactEmail);
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_partners?select=partner_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("partner_id").getAsString());
         }
-        throw new SQLException("INSERT into fyp.industry_partners returned no ID.");
+        throw new Exception("Failed to insert partner: " + response.body());
     }
 
-    private IndustryPartner mapRow(ResultSet rs) throws SQLException {
+    private IndustryPartner mapRow(JsonObject obj) {
+        JsonObject userObj = obj.getAsJsonObject("users");
         return new IndustryPartner(
-            UUID.fromString(rs.getString("user_id")),
-            rs.getString("name"),
-            rs.getString("email"),
-            rs.getString("password_hash"),
-            rs.getBoolean("is_active"),
-            rs.getBoolean("is_email_verified"),
-            UUID.fromString(rs.getString("partner_id")),
-            rs.getString("company_name"),
-            rs.getString("contact_email")
+            UUID.fromString(userObj.get("user_id").getAsString()),
+            userObj.has("name") && !userObj.get("name").isJsonNull() ? userObj.get("name").getAsString() : "",
+            userObj.has("email") && !userObj.get("email").isJsonNull() ? userObj.get("email").getAsString() : "",
+            "", // no password hash
+            userObj.has("is_active") && userObj.get("is_active").getAsBoolean(),
+            userObj.has("is_email_verified") && userObj.get("is_email_verified").getAsBoolean(),
+            UUID.fromString(obj.get("partner_id").getAsString()),
+            obj.has("company_name") && !obj.get("company_name").isJsonNull() ? obj.get("company_name").getAsString() : "",
+            obj.has("contact_email") && !obj.get("contact_email").isJsonNull() ? obj.get("contact_email").getAsString() : ""
         );
     }
 }

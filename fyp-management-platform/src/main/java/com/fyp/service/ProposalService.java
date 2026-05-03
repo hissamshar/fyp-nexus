@@ -13,7 +13,6 @@ import java.util.UUID;
 
 /**
  * Business logic for proposal submission and supervisor review.
- * Implements the exact sequence diagram from the spec.
  */
 public class ProposalService {
 
@@ -23,10 +22,8 @@ public class ProposalService {
     private final NotificationService notifService = new NotificationService();
     private final DiscussionDAO discussionDAO = new DiscussionDAO();
 
-    /**
-     * FR-05: Student submits a proposal (status = PENDING).
-     * Validates all fields, inserts, notifies supervisor.
-     */
+    private String jwt() { return SessionManager.getJwtToken(); }
+
     public UUID submitProposal(String title, String abstract_, String objectives,
                                String methodology, String expectedOutcome,
                                String description, UUID supervisorId) throws Exception {
@@ -35,9 +32,10 @@ public class ProposalService {
         if (!"STUDENT".equals(current.getRole()))
             throw new Exception("Only students can submit proposals.");
 
-        Student student = (Student) current;
+        Student student = (current instanceof Student s) ? s
+            : new StudentDAO().findByUserId(current.getUserId(), jwt())
+                .orElseThrow(() -> new Exception("Student profile not found."));
 
-        // Validate required fields
         if (isBlank(title))           throw new Exception("FIELD_EMPTY:title");
         if (isBlank(abstract_))       throw new Exception("FIELD_EMPTY:abstract");
         if (isBlank(objectives))      throw new Exception("FIELD_EMPTY:objectives");
@@ -57,12 +55,11 @@ public class ProposalService {
         proposal.setStudentId(student.getStudentId());
         proposal.setSupervisorId(supervisorId);
 
-        UUID proposalId = proposalDAO.insert(proposal);
+        UUID proposalId = proposalDAO.insert(proposal, jwt());
         AuditLogger.logProposalSubmit(current.getUserId(), proposalId);
 
-        // Notify supervisor
         SupervisorDAO supervisorDAO = new SupervisorDAO();
-        supervisorDAO.findBySupervisorId(supervisorId).ifPresent(sup -> {
+        supervisorDAO.findBySupervisorId(supervisorId, jwt()).ifPresent(sup -> {
             try {
                 notifService.create(sup.getUserId(), NotificationType.PROPOSAL,
                     "New proposal submitted: \"" + title + "\"", sup.getEmail());
@@ -74,9 +71,6 @@ public class ProposalService {
         return proposalId;
     }
 
-    /**
-     * FR-05: Save proposal as draft (status = DRAFT).
-     */
     public UUID saveDraft(String title, String abstract_, String objectives,
                           String methodology, String expectedOutcome,
                           String description, UUID supervisorId) throws Exception {
@@ -85,7 +79,9 @@ public class ProposalService {
         if (!"STUDENT".equals(current.getRole()))
             throw new Exception("Only students can save proposals.");
 
-        Student student = (Student) current;
+        Student student = (current instanceof Student s) ? s
+            : new StudentDAO().findByUserId(current.getUserId(), jwt())
+                .orElseThrow(() -> new Exception("Student profile not found."));
 
         ProjectProposal proposal = new ProjectProposal();
         proposal.setTitle(title != null ? title.trim() : "");
@@ -98,33 +94,24 @@ public class ProposalService {
         proposal.setStudentId(student.getStudentId());
         proposal.setSupervisorId(supervisorId);
 
-        return proposalDAO.insert(proposal);
+        return proposalDAO.insert(proposal, jwt());
     }
 
-    /**
-     * FR-06: Supervisor approves or rejects a proposal.
-     * On approval, automatically creates a Project (status=INITIATED)
-     * and creates a DiscussionBoard for the project.
-     */
     public void reviewProposal(UUID proposalId, ProposalStatus decision, String comment) throws Exception {
         User current = SessionManager.getCurrentUser();
         if (!"SUPERVISOR".equals(current.getRole()) && !"ADMIN".equals(current.getRole()))
             throw new Exception("Only supervisors or admins can review proposals.");
 
-        proposalDAO.updateStatus(proposalId, decision, comment);
+        proposalDAO.updateStatus(proposalId, decision, comment, jwt());
 
-        proposalDAO.findById(proposalId).ifPresent(proposal -> {
+        proposalDAO.findById(proposalId, jwt()).ifPresent(proposal -> {
             try {
                 if (decision == ProposalStatus.APPROVED) {
-                    // Auto-create Project
-                    UUID projectId = projectDAO.insert(proposalId);
+                    UUID projectId = projectDAO.insert(proposalId, jwt());
+                    discussionDAO.insertBoard(projectId, false, jwt());
 
-                    // Auto-create discussion board for the project
-                    discussionDAO.insertBoard(projectId, false);
-
-                    // Notify student
                     StudentDAO sDAO = new StudentDAO();
-                    sDAO.findByStudentId(proposal.getStudentId()).ifPresent(student -> {
+                    sDAO.findByStudentId(proposal.getStudentId(), jwt()).ifPresent(student -> {
                         try {
                             notifService.create(student.getUserId(), NotificationType.PROPOSAL,
                                 "Your proposal \"" + proposal.getTitle() + "\" was APPROVED. Project created!",
@@ -133,7 +120,7 @@ public class ProposalService {
                     });
                 } else if (decision == ProposalStatus.REJECTED) {
                     StudentDAO sDAO = new StudentDAO();
-                    sDAO.findByStudentId(proposal.getStudentId()).ifPresent(student -> {
+                    sDAO.findByStudentId(proposal.getStudentId(), jwt()).ifPresent(student -> {
                         try {
                             notifService.create(student.getUserId(), NotificationType.PROPOSAL,
                                 "Your proposal \"" + proposal.getTitle() + "\" was REJECTED. Reason: " + comment,
@@ -152,15 +139,84 @@ public class ProposalService {
     public List<ProjectProposal> getProposalsForCurrentUser() throws Exception {
         User current = SessionManager.getCurrentUser();
         if ("STUDENT".equals(current.getRole())) {
-            return proposalDAO.findByStudentId(((Student) current).getStudentId());
+            Student s = (current instanceof Student st) ? st
+                : new StudentDAO().findByUserId(current.getUserId(), jwt()).orElseThrow();
+            return proposalDAO.findByStudentId(s.getStudentId(), jwt());
         } else if ("SUPERVISOR".equals(current.getRole())) {
-            return proposalDAO.findBySupervisorId(((Supervisor) current).getSupervisorId());
+            Supervisor sv = (current instanceof Supervisor sup) ? sup
+                : new SupervisorDAO().findByUserId(current.getUserId(), jwt()).orElseThrow();
+            return proposalDAO.findBySupervisorId(sv.getSupervisorId(), jwt());
         }
-        return proposalDAO.findAll();
+        return proposalDAO.findAll(jwt());
     }
 
     public List<ProjectProposal> getPendingProposals() throws Exception {
-        return proposalDAO.findByStatus(ProposalStatus.PENDING);
+        return proposalDAO.findByStatus(ProposalStatus.PENDING, jwt());
+    }
+
+    // ── Adapter methods for controllers ──────────────────────────────────────
+
+    /** Fetch all supervisors visible to the current user. */
+    public List<Supervisor> getAvailableSupervisors(String token) throws Exception {
+        SupervisorDAO supDAO = new SupervisorDAO();
+        return supDAO.findAll(token);
+    }
+
+    /** Supervisor-facing: get proposals assigned to the current supervisor. */
+    public List<ProjectProposal> getProposalsForSupervisor(String token) throws Exception {
+        User current = SessionManager.getCurrentUser();
+        if ("SUPERVISOR".equals(current.getRole())) {
+            Supervisor sv = (current instanceof Supervisor sup) ? sup
+                : new SupervisorDAO().findByUserId(current.getUserId(), token).orElseThrow();
+            return proposalDAO.findBySupervisorId(sv.getSupervisorId(), token);
+        }
+        return proposalDAO.findAll(token);
+    }
+
+    /**
+     * Simple submit/draft helper used by ProposalFormController.
+     * Maps problem/solution/outcomes to the richer domain model fields.
+     */
+    public ProjectProposal submitProposal(String title, String problem, String solution,
+                                          String outcomes, UUID supervisorId,
+                                          String token, boolean submit) throws Exception {
+        User current = SessionManager.getCurrentUser();
+        ProjectProposal p = new ProjectProposal();
+        p.setTitle(title);
+        p.setAbstract(problem);        // problem statement → abstract field
+        p.setObjectives(solution);     // proposed solution → objectives field
+        p.setExpectedOutcome(outcomes);
+        p.setSupervisorId(supervisorId);
+        p.setSubmissionDate(LocalDate.now());
+        p.setStatus(submit ? ProposalStatus.PENDING : ProposalStatus.DRAFT);
+        if ("STUDENT".equals(current.getRole())) {
+            Student s = (current instanceof Student st) ? st
+                : new StudentDAO().findByUserId(current.getUserId(), token).orElseThrow();
+            p.setStudentId(s.getStudentId());
+        }
+        UUID id = proposalDAO.insert(p, token);
+        p.setProposalId(id);
+        return p;
+    }
+
+    /** String-based review action for ProposalReviewController. */
+    public boolean reviewProposal(UUID proposalId, String action, String feedback, String token) {
+        try {
+            ProposalStatus status = switch (action) {
+                case "APPROVED"            -> ProposalStatus.APPROVED;
+                case "REJECTED"            -> ProposalStatus.REJECTED;
+                case "REVISION_REQUESTED"  -> ProposalStatus.REVISION_REQUESTED;
+                default                    -> ProposalStatus.PENDING;
+            };
+            proposalDAO.updateStatus(proposalId, status, feedback, token);
+            if (status == ProposalStatus.APPROVED) {
+                projectDAO.insert(proposalId, token);
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private boolean isBlank(String s) { return s == null || s.isBlank(); }

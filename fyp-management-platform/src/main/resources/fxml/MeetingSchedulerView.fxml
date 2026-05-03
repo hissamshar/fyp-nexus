@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.MeetingSchedulerController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="Meetings" styleClass="page-title"/>
+
+    <HBox spacing="16">
+        <!-- Request form -->
+        <VBox styleClass="content-card" spacing="14" prefWidth="340">
+            <Label text="Request a Meeting" styleClass="card-title"/>
+
+            <Label text="Supervisor" styleClass="field-label"/>
+            <ComboBox fx:id="supervisorCombo" promptText="Select supervisor" styleClass="combo-dark"
+                      maxWidth="Infinity" id="meetingSupervisorCombo"/>
+
+            <Label text="Proposed Date &amp; Time" styleClass="field-label"/>
+            <DatePicker fx:id="datePicker" styleClass="combo-dark" id="meetingDatePicker"/>
+            <TextField fx:id="timeField" promptText="e.g. 10:30 AM" styleClass="text-field-dark" id="meetingTimeField"/>
+
+            <Label text="Agenda" styleClass="field-label"/>
+            <TextArea fx:id="agendaField" promptText="What would you like to discuss?"
+                      styleClass="text-field-dark" prefHeight="90" wrapText="true" id="meetingAgenda"/>
+
+            <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
+            <Button text="Send Request" styleClass="btn-primary" onAction="#handleRequest" id="sendMeetingBtn"/>
+        </VBox>
+
+        <!-- Meetings list -->
+        <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+            <Label text="Meeting Requests" styleClass="card-title"/>
+            <TableView fx:id="meetingsTable" VBox.vgrow="ALWAYS" prefHeight="440" styleClass="dark-table" id="meetingsTable">
+                <columns>
+                    <TableColumn fx:id="mDateCol"     text="Date/Time"   prefWidth="150"/>
+                    <TableColumn fx:id="mPersonCol"   text="With"        prefWidth="160"/>
+                    <TableColumn fx:id="mAgendaCol"   text="Agenda"      prefWidth="200"/>
+                    <TableColumn fx:id="mStatusCol"   text="Status"      prefWidth="100"/>
+                </columns>
+            </TableView>
+            <HBox spacing="8">
+                <Button text="✅ Accept"   styleClass="btn-primary" onAction="#handleAccept"    id="acceptMeetingBtn"
+                        style="-fx-background-color:linear-gradient(to right,#059669,#10B981);"/>
+                <Button text="❌ Decline"  styleClass="btn-primary" onAction="#handleDecline"   id="declineMeetingBtn"
+                        style="-fx-background-color:linear-gradient(to right,#DC2626,#EF4444);"/>
+                <Button text="🔄 Reschedule" styleClass="btn-outline-small" onAction="#handleReschedule" id="rescheduleMeetingBtn"/>
+            </HBox>
+        </VBox>
+    </HBox>
+</VBox>

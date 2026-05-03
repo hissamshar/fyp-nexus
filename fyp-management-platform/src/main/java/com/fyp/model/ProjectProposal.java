@@ -16,6 +16,7 @@ public class ProjectProposal {
     private ProposalStatus status;
     private String rejectionComment;
     private UUID studentId;
+    private String studentName; // Added for UI display
     private UUID supervisorId;
 
     public ProjectProposal() {}
@@ -63,6 +64,7 @@ public class ProjectProposal {
     public ProposalStatus getStatus()  { return status; }
     public String getRejectionComment(){ return rejectionComment; }
     public UUID getStudentId()         { return studentId; }
+    public String getStudentName()     { return studentName != null ? studentName : "Unknown Student"; }
     public UUID getSupervisorId()      { return supervisorId; }
 
     // ── Setters ────────────────────────────────────────────────────────────────
@@ -77,5 +79,6 @@ public class ProjectProposal {
     public void setStatus(ProposalStatus status)           { this.status = status; }
     public void setRejectionComment(String comment)        { this.rejectionComment = comment; }
     public void setStudentId(UUID studentId)               { this.studentId = studentId; }
+    public void setStudentName(String studentName)         { this.studentName = studentName; }
     public void setSupervisorId(UUID supervisorId)         { this.supervisorId = supervisorId; }
 }

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.AnalyticsDashboardController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="Analytics Dashboard" styleClass="page-title"/>
+
+    <!-- Top stat cards -->
+    <HBox spacing="16">
+        <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="Total Students"   styleClass="stat-label"/>
+            <Label fx:id="totalStudents"   text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card stat-card-blue" HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="Active Projects"  styleClass="stat-label"/>
+            <Label fx:id="activeProjects"  text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card stat-card-teal" HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="Proposals Pending" styleClass="stat-label"/>
+            <Label fx:id="pendingProposals" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card stat-card-orange" HBox.hgrow="ALWAYS" spacing="4">
+            <Label text="Avg Grade"        styleClass="stat-label"/>
+            <Label fx:id="avgGrade"        text="—" styleClass="stat-value"/>
+        </VBox>
+    </HBox>
+
+    <HBox spacing="16">
+        <!-- Project status breakdown -->
+        <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+            <Label text="Projects by Status" styleClass="card-title"/>
+            <TableView fx:id="projectStatusTable" prefHeight="200" styleClass="dark-table" id="projectStatusTable">
+                <columns>
+                    <TableColumn fx:id="psStatusCol" text="Status" prefWidth="150"/>
+                    <TableColumn fx:id="psCountCol"  text="Count"  prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- Supervisor load -->
+        <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+            <Label text="Supervisor Capacity" styleClass="card-title"/>
+            <TableView fx:id="supervisorLoadTable" prefHeight="200" styleClass="dark-table" id="supervisorLoadTable">
+                <columns>
+                    <TableColumn fx:id="slNameCol"  text="Supervisor"   prefWidth="160"/>
+                    <TableColumn fx:id="slSlotsCol" text="Slots Left"   prefWidth="90"/>
+                    <TableColumn fx:id="slStudCol"  text="Students"     prefWidth="80"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </HBox>
+
+    <!-- Export -->
+    <HBox spacing="12">
+        <Button text="📥 Export to CSV" styleClass="btn-outline-small" onAction="#handleExportCsv" id="exportCsvBtn"/>
+        <Button text="📄 Generate PDF Report" styleClass="btn-primary" onAction="#handleGeneratePdf" id="generatePdfBtn"/>
+    </HBox>
+</VBox>

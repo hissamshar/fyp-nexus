@@ -6,6 +6,10 @@ import java.util.UUID;
 
 public class Project {
     private UUID projectId;
+    private String title;
+    private String problemStatement;
+    private String finalGrade;
+    private UUID supervisorId;
     private LocalDate startDate;
     private LocalDate endDate;
     private String repoUrl;
@@ -38,18 +42,26 @@ public class Project {
     }
 
     // ── Getters ────────────────────────────────────────────────────────────────
-    public UUID getProjectId()      { return projectId; }
-    public LocalDate getStartDate() { return startDate; }
-    public LocalDate getEndDate()   { return endDate; }
-    public String getRepoUrl()      { return repoUrl; }
-    public ProjectStatus getStatus(){ return status; }
-    public UUID getProposalId()     { return proposalId; }
+    public UUID getProjectId()           { return projectId; }
+    public String getTitle()             { return title; }
+    public String getProblemStatement()  { return problemStatement; }
+    public String getFinalGrade()        { return finalGrade; }
+    public UUID getSupervisorId()        { return supervisorId; }
+    public LocalDate getStartDate()      { return startDate; }
+    public LocalDate getEndDate()        { return endDate; }
+    public String getRepoUrl()           { return repoUrl; }
+    public ProjectStatus getStatus()     { return status; }
+    public UUID getProposalId()          { return proposalId; }
 
     // ── Setters ────────────────────────────────────────────────────────────────
-    public void setProjectId(UUID projectId)     { this.projectId = projectId; }
-    public void setStartDate(LocalDate startDate){ this.startDate = startDate; }
-    public void setEndDate(LocalDate endDate)    { this.endDate = endDate; }
-    public void setRepoUrl(String repoUrl)       { this.repoUrl = repoUrl; }
-    public void setStatus(ProjectStatus status)  { this.status = status; }
-    public void setProposalId(UUID proposalId)   { this.proposalId = proposalId; }
+    public void setProjectId(UUID projectId)         { this.projectId = projectId; }
+    public void setTitle(String title)               { this.title = title; }
+    public void setProblemStatement(String ps)       { this.problemStatement = ps; }
+    public void setFinalGrade(String fg)             { this.finalGrade = fg; }
+    public void setSupervisorId(UUID supervisorId)   { this.supervisorId = supervisorId; }
+    public void setStartDate(LocalDate startDate)    { this.startDate = startDate; }
+    public void setEndDate(LocalDate endDate)        { this.endDate = endDate; }
+    public void setRepoUrl(String repoUrl)           { this.repoUrl = repoUrl; }
+    public void setStatus(ProjectStatus status)      { this.status = status; }
+    public void setProposalId(UUID proposalId)       { this.proposalId = proposalId; }
 }

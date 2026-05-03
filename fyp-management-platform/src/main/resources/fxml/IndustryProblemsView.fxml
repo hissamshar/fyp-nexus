@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.IndustryProblemsController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Industry Problems" styleClass="page-title" HBox.hgrow="ALWAYS"/>
+        <TextField fx:id="searchField" promptText="🔍 Search problems..." styleClass="text-field-dark"
+                   prefWidth="240" id="industrySearchField"/>
+        <Button text="Search" styleClass="btn-outline-small" onAction="#handleSearch" id="industrySearchBtn"/>
+    </HBox>
+
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+        <!-- Problem list -->
+        <VBox styleClass="content-card" spacing="12" prefWidth="360">
+            <Label text="Available Problems" styleClass="card-title"/>
+            <ListView fx:id="problemsList" VBox.vgrow="ALWAYS" prefHeight="480" id="problemsList"
+                      style="-fx-background-color:#0F172A; -fx-border-color:#334155; -fx-border-radius:6;"/>
+        </VBox>
+
+        <!-- Detail view -->
+        <VBox styleClass="content-card" spacing="14" HBox.hgrow="ALWAYS">
+            <Label text="Problem Details" styleClass="card-title"/>
+            <Label text="Title:" styleClass="field-label"/>
+            <Label fx:id="problemTitle" style="-fx-text-fill:#F8FAFC; -fx-font-size:16; -fx-font-weight:bold;"/>
+
+            <Label text="Company:" styleClass="field-label"/>
+            <Label fx:id="problemCompany" style="-fx-text-fill:#818CF8;"/>
+
+            <Label text="Domain:" styleClass="field-label"/>
+            <Label fx:id="problemDomain" style="-fx-text-fill:#E2E8F0;"/>
+
+            <Label text="Description:" styleClass="field-label"/>
+            <TextArea fx:id="problemDesc" editable="false" styleClass="text-field-dark"
+                      prefHeight="200" wrapText="true" id="problemDescArea"/>
+
+            <Label text="Deadline:" styleClass="field-label"/>
+            <Label fx:id="problemDeadline" style="-fx-text-fill:#F97316;"/>
+
+            <Label fx:id="statusMsg" styleClass="error-label" visible="false" managed="false"/>
+            <Button text="🚀 Adopt this Problem" styleClass="btn-primary" onAction="#handleAdopt" id="adoptProblemBtn"/>
+        </VBox>
+    </HBox>
+</VBox>

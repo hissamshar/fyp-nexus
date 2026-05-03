@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.ProgressReportController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="Progress Reports" styleClass="page-title"/>
+
+    <VBox styleClass="content-card" spacing="14">
+        <Label text="Submit Progress Report" styleClass="card-title"/>
+
+        <HBox spacing="12">
+            <VBox HBox.hgrow="ALWAYS" spacing="6">
+                <Label text="Report Week" styleClass="field-label"/>
+                <TextField fx:id="weekField" promptText="e.g. Week 5" styleClass="text-field-dark" id="reportWeek"/>
+            </VBox>
+            <VBox spacing="6">
+                <Label text="Report Date" styleClass="field-label"/>
+                <DatePicker fx:id="reportDate" styleClass="combo-dark" id="reportDate"/>
+            </VBox>
+        </HBox>
+
+        <Label text="Work Completed This Week" styleClass="field-label"/>
+        <TextArea fx:id="completedField" promptText="Describe what was accomplished..." styleClass="text-field-dark"
+                  prefHeight="100" wrapText="true" id="completedField"/>
+
+        <Label text="Planned Work for Next Week" styleClass="field-label"/>
+        <TextArea fx:id="plannedField" promptText="Describe what you plan to do next..." styleClass="text-field-dark"
+                  prefHeight="80" wrapText="true" id="plannedField"/>
+
+        <Label text="Blockers / Issues" styleClass="field-label"/>
+        <TextArea fx:id="blockersField" promptText="Any issues or blockers?" styleClass="text-field-dark"
+                  prefHeight="60" wrapText="true" id="blockersField"/>
+
+        <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
+        <Button text="Submit Report" styleClass="btn-primary" onAction="#handleSubmit" id="submitReportBtn"/>
+    </VBox>
+
+    <VBox styleClass="content-card" spacing="12">
+        <Label text="Past Reports" styleClass="card-title"/>
+        <TableView fx:id="reportsTable" prefHeight="200" styleClass="dark-table" id="reportsTable">
+            <columns>
+                <TableColumn fx:id="rWeekCol"   text="Week"      prefWidth="100"/>
+                <TableColumn fx:id="rDateCol"   text="Date"      prefWidth="130"/>
+                <TableColumn fx:id="rSummaryCol" text="Summary"  prefWidth="400"/>
+            </columns>
+        </TableView>
+    </VBox>
+</VBox>

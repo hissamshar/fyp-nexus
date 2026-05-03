@@ -1,93 +1,118 @@
 package com.fyp.dao;
 
 import com.fyp.model.IndustryProblem;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
-import java.util.*;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class IndustryProblemDAO {
 
-    public List<IndustryProblem> findAll() throws SQLException {
+    public List<IndustryProblem> findAll(String jwt) throws Exception {
         List<IndustryProblem> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.industry_problems WHERE is_active = TRUE ORDER BY created_at DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
-        }
-        return list;
-    }
-
-    public List<IndustryProblem> findByPartnerId(UUID partnerId) throws SQLException {
-        List<IndustryProblem> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.industry_problems WHERE partner_id = ?::uuid ORDER BY created_at DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, partnerId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_problems?is_active=eq.true&order=created_at.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
             }
         }
         return list;
     }
 
-    public UUID insert(IndustryProblem p) throws SQLException {
-        String sql = "INSERT INTO fyp.industry_problems (title, description, domain, contact_email, partner_id) " +
-                     "VALUES (?, ?, ?, ?, ?::uuid) RETURNING problem_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, p.getTitle());
-            ps.setString(2, p.getDescription());
-            ps.setString(3, p.getDomain());
-            ps.setString(4, p.getContactEmail());
-            ps.setString(5, p.getPartnerId().toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("problem_id"));
-            }
-        }
-        throw new SQLException("INSERT into fyp.industry_problems returned no ID.");
-    }
-
-    public void adopt(UUID problemId, UUID studentId) throws SQLException {
-        String sql = "UPDATE fyp.industry_problems SET adopted_by = ?::uuid WHERE problem_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, studentId.toString());
-            ps.setString(2, problemId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    public List<IndustryProblem> searchByKeyword(String keyword) throws SQLException {
+    public List<IndustryProblem> findByPartnerId(UUID partnerId, String jwt) throws Exception {
         List<IndustryProblem> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.industry_problems WHERE is_active = TRUE " +
-                     "AND (LOWER(title) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?) OR LOWER(domain) LIKE LOWER(?)) " +
-                     "ORDER BY created_at DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            String pattern = "%" + keyword + "%";
-            ps.setString(1, pattern);
-            ps.setString(2, pattern);
-            ps.setString(3, pattern);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_problems?partner_id=eq." + partnerId + "&order=created_at.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
             }
         }
         return list;
     }
 
-    private IndustryProblem mapRow(ResultSet rs) throws SQLException {
+    public UUID insert(IndustryProblem p, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("title", p.getTitle());
+        json.addProperty("description", p.getDescription());
+        json.addProperty("domain", p.getDomain());
+        json.addProperty("contact_email", p.getContactEmail());
+        json.addProperty("partner_id", p.getPartnerId().toString());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_problems?select=problem_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("problem_id").getAsString());
+        }
+        throw new Exception("Failed to insert problem: " + response.body());
+    }
+
+    public void adopt(UUID problemId, UUID studentId, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("adopted_by", studentId.toString());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_problems?problem_id=eq." + problemId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
+    }
+
+    public List<IndustryProblem> searchByKeyword(String keyword, String jwt) throws Exception {
+        List<IndustryProblem> list = new ArrayList<>();
+        // PostgREST ilike operator
+        String encodedKw = URLEncoder.encode("*" + keyword + "*", StandardCharsets.UTF_8);
+        String filter = "or=(title.ilike." + encodedKw + ",description.ilike." + encodedKw + ",domain.ilike." + encodedKw + ")";
+        
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/industry_problems?is_active=eq.true&" + filter + "&order=created_at.desc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
+            }
+        }
+        return list;
+    }
+
+    private IndustryProblem mapRow(JsonObject obj) {
         IndustryProblem p = new IndustryProblem();
-        p.setProblemId(UUID.fromString(rs.getString("problem_id")));
-        p.setTitle(rs.getString("title"));
-        p.setDescription(rs.getString("description"));
-        p.setDomain(rs.getString("domain"));
-        p.setContactEmail(rs.getString("contact_email"));
-        p.setPartnerId(UUID.fromString(rs.getString("partner_id")));
-        String ab = rs.getString("adopted_by");
-        if (ab != null) p.setAdoptedBy(UUID.fromString(ab));
-        p.setActive(rs.getBoolean("is_active"));
+        p.setProblemId(UUID.fromString(obj.get("problem_id").getAsString()));
+        p.setTitle(obj.has("title") && !obj.get("title").isJsonNull() ? obj.get("title").getAsString() : "");
+        p.setDescription(obj.has("description") && !obj.get("description").isJsonNull() ? obj.get("description").getAsString() : "");
+        p.setDomain(obj.has("domain") && !obj.get("domain").isJsonNull() ? obj.get("domain").getAsString() : "");
+        p.setContactEmail(obj.has("contact_email") && !obj.get("contact_email").isJsonNull() ? obj.get("contact_email").getAsString() : "");
+        p.setPartnerId(UUID.fromString(obj.get("partner_id").getAsString()));
+        if (obj.has("adopted_by") && !obj.get("adopted_by").isJsonNull()) {
+            p.setAdoptedBy(UUID.fromString(obj.get("adopted_by").getAsString()));
+        }
+        p.setActive(obj.has("is_active") && obj.get("is_active").getAsBoolean());
         return p;
     }
 }

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.RepositoryController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Project Repository" styleClass="page-title" HBox.hgrow="ALWAYS"/>
+        <TextField fx:id="searchField" promptText="🔍 Search by title, supervisor..." styleClass="text-field-dark"
+                   prefWidth="280" id="repoSearchField"/>
+        <ComboBox fx:id="statusFilter" promptText="Status" styleClass="combo-dark" id="repoStatusFilter"/>
+        <Button text="Search" styleClass="btn-outline-small" onAction="#handleSearch" id="repoSearchBtn"/>
+    </HBox>
+
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+        <!-- Project list -->
+        <VBox styleClass="content-card" spacing="12" prefWidth="380">
+            <Label text="Published Projects" styleClass="card-title"/>
+            <TableView fx:id="projectsTable" VBox.vgrow="ALWAYS" prefHeight="460" styleClass="dark-table" id="repoProjectsTable">
+                <columns>
+                    <TableColumn fx:id="projTitleCol" text="Title"      prefWidth="200"/>
+                    <TableColumn fx:id="projSupCol"   text="Supervisor" prefWidth="140"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- Detail -->
+        <VBox styleClass="content-card" spacing="14" HBox.hgrow="ALWAYS">
+            <Label text="Project Details" styleClass="card-title"/>
+
+            <Label text="Title:" styleClass="field-label"/>
+            <Label fx:id="projTitle" style="-fx-text-fill:#F8FAFC; -fx-font-size:16; -fx-font-weight:bold; -fx-wrap-text:true;"/>
+
+            <Label text="Status:" styleClass="field-label"/>
+            <Label fx:id="projStatus" style="-fx-text-fill:#818CF8; -fx-font-weight:bold;"/>
+
+            <Label text="Supervisor:" styleClass="field-label"/>
+            <Label fx:id="projSupervisor" style="-fx-text-fill:#E2E8F0;"/>
+
+            <Label text="Students:" styleClass="field-label"/>
+            <Label fx:id="projStudents" style="-fx-text-fill:#E2E8F0;"/>
+
+            <Label text="Problem Statement:" styleClass="field-label"/>
+            <TextArea fx:id="projProblem" editable="false" styleClass="text-field-dark"
+                      prefHeight="140" wrapText="true" id="repoProblemArea"/>
+
+            <Label text="Final Grade:" styleClass="field-label"/>
+            <Label fx:id="projGrade" style="-fx-text-fill:#10B981; -fx-font-size:20; -fx-font-weight:bold;"/>
+        </VBox>
+    </HBox>
+</VBox>

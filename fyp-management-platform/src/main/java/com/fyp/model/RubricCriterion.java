@@ -35,4 +35,8 @@ public class RubricCriterion {
     public void setMaxScore(int maxScore)              { this.maxScore = maxScore; }
     public void setDescription(String description)    { this.description = description; }
     public void setRubricId(UUID rubricId)            { this.rubricId = rubricId; }
+
+    // Alias for UI binding
+    public String getName()           { return criterionName; }
+    public void setName(String name)  { this.criterionName = name; }
 }

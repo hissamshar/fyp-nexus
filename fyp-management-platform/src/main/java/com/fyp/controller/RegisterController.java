@@ -2,6 +2,7 @@ package com.fyp.controller;
 
 import com.fyp.Main;
 import com.fyp.service.AuthService;
+import com.fyp.util.SessionManager;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -21,8 +22,7 @@ public class RegisterController implements Initializable {
     @FXML private Button registerBtn;
     @FXML private ProgressIndicator loadingIndicator;
 
-    private final AuthService authService = new AuthService();
-    private UUID pendingUserId;
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -66,18 +66,45 @@ public class RegisterController implements Initializable {
         String company = companyField.getText().trim();
 
         setLoading(true);
-        Task<UUID> task = new Task<>() {
+        Task<String> task = new Task<>() {
             @Override
-            protected UUID call() throws Exception {
-                return authService.register(name, email, pass, role, dept, company);
+            protected String call() throws Exception {
+                // We currently don't use dept and company in the basic signup for demo purposes, 
+                // but they can be passed to meta-data if needed.
+                return AuthService.signup(email, pass, name, role);
             }
         };
 
         task.setOnSucceeded(e -> {
             setLoading(false);
-            pendingUserId = task.getValue();
-            OTPVerificationController ctrl = Main.loadViewWithController("OTPVerificationView");
-            if (ctrl != null) ctrl.setContext(pendingUserId, email, "EMAIL_VERIFY");
+            String userIdStr = task.getValue();
+            if ("AUTO_LOGGED_IN".equals(userIdStr)) {
+                // Email confirmation is disabled on Supabase; user is immediately logged in
+                System.out.println("Auto logged in!");
+                String dashboardView = switch (SessionManager.getCurrentRole()) {
+                    case "STUDENT"          -> "StudentDashboard";
+                    case "SUPERVISOR"       -> "SupervisorDashboard";
+                    case "EXAMINER"         -> "ExaminerDashboard";
+                    case "ADMIN"            -> "AdminDashboard";
+                    case "INDUSTRY_PARTNER" -> "IndustryPartnerDashboard";
+                    default -> "LoginView";
+                };
+                javafx.application.Platform.runLater(() -> Main.loadView(dashboardView));
+            } else if (userIdStr != null) {
+                try {
+                    UUID userId = "OK".equals(userIdStr) ? null : UUID.fromString(userIdStr);
+                    Main.loadViewWithContext("OTPVerificationView", controller -> {
+                        if (controller instanceof OTPVerificationController otpCtrl) {
+                            otpCtrl.setContext(userId, email, "EMAIL_VERIFY");
+                        }
+                    });
+                } catch (Exception ex) {
+                    showError("Registration successful! Please check your email for the code.");
+                    Main.loadView("LoginView");
+                }
+            } else {
+                showError("Registration failed. Please try again.");
+            }
         });
 
         task.setOnFailed(e -> {

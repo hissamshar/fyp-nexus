@@ -78,6 +78,11 @@
     -fx-font-size: 14px;
 }
 
+/* Fix for TextArea content visibility */
+.text-field-dark .content {
+    -fx-background-color: #1E293B; /* Slate 800 */
+}
+
 .text-field-dark:focused, .combo-dark:focused {
     -fx-border-color: #818CF8;
     -fx-effect: dropshadow(three-pass-box, rgba(129,140,248,0.2), 10, 0, 0, 0);

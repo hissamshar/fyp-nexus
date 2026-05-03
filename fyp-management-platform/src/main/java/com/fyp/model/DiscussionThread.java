@@ -39,4 +39,8 @@ public class DiscussionThread {
     public void setLocked(boolean locked)  { isLocked = locked; }
     public void setPinned(boolean pinned)  { isPinned = pinned; }
     public void setBoardId(UUID boardId)   { this.boardId = boardId; }
+
+    // Alias for UI binding
+    public String getTitle()           { return topic; }
+    public void setTitle(String title) { this.topic = title; }
 }

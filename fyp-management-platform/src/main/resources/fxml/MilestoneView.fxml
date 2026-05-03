@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.MilestoneController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="Milestones" styleClass="page-title"/>
+
+    <!-- Milestone cards -->
+    <VBox fx:id="milestonesContainer" spacing="12"/>
+
+    <VBox styleClass="content-card" spacing="16">
+        <Label text="Add New Milestone" styleClass="card-title"/>
+
+        <HBox spacing="12">
+            <VBox HBox.hgrow="ALWAYS" spacing="6">
+                <Label text="Title" styleClass="field-label"/>
+                <TextField fx:id="mTitleField" promptText="Milestone title" styleClass="text-field-dark" id="milestoneTitle"/>
+            </VBox>
+            <VBox spacing="6">
+                <Label text="Due Date" styleClass="field-label"/>
+                <DatePicker fx:id="mDueDatePicker" styleClass="combo-dark" id="milestoneDueDate"/>
+            </VBox>
+        </HBox>
+
+        <Label text="Description" styleClass="field-label"/>
+        <TextArea fx:id="mDescField" promptText="Milestone description..." styleClass="text-field-dark"
+                  prefHeight="80" wrapText="true" id="milestoneDesc"/>
+
+        <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
+        <Button text="Add Milestone" styleClass="btn-primary" onAction="#handleAddMilestone" id="addMilestoneBtn"/>
+    </VBox>
+</VBox>

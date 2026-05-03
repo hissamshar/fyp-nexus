@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.DeadlineManagementController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="Semester Deadlines" styleClass="page-title"/>
+
+    <HBox spacing="16">
+        <!-- Add deadline form -->
+        <VBox styleClass="content-card" spacing="14" prefWidth="340">
+            <Label text="Add / Update Deadline" styleClass="card-title"/>
+            <Label text="Deadline Name" styleClass="field-label"/>
+            <TextField fx:id="deadlineNameField" promptText="e.g. FYP-1 Proposal Due" styleClass="text-field-dark" id="deadlineName"/>
+
+            <Label text="Date" styleClass="field-label"/>
+            <DatePicker fx:id="deadlineDatePicker" styleClass="combo-dark" id="deadlineDate"/>
+
+            <Label text="Description (optional)" styleClass="field-label"/>
+            <TextArea fx:id="deadlineDescField" promptText="Additional details..." styleClass="text-field-dark"
+                      prefHeight="80" wrapText="true" id="deadlineDesc"/>
+
+            <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
+            <Button text="Save Deadline" styleClass="btn-primary" onAction="#handleSave" id="saveDeadlineBtn"/>
+        </VBox>
+
+        <!-- Deadlines list -->
+        <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
+            <Label text="Configured Deadlines" styleClass="card-title"/>
+            <TableView fx:id="deadlinesTable" VBox.vgrow="ALWAYS" prefHeight="400" styleClass="dark-table" id="deadlinesTable">
+                <columns>
+                    <TableColumn fx:id="dNameCol"   text="Name"        prefWidth="200"/>
+                    <TableColumn fx:id="dDateCol"   text="Date"        prefWidth="130"/>
+                    <TableColumn fx:id="dStatusCol" text="Status"      prefWidth="100"/>
+                    <TableColumn fx:id="dDescCol"   text="Description" prefWidth="200"/>
+                </columns>
+            </TableView>
+            <HBox spacing="8">
+                <Button text="🗑 Delete" styleClass="btn-primary" onAction="#handleDelete" id="deleteDeadlineBtn"
+                        style="-fx-background-color:linear-gradient(to right,#DC2626,#EF4444);"/>
+            </HBox>
+        </VBox>
+    </HBox>
+</VBox>

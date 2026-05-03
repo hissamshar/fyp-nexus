@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.NotificationPanelController"
+      styleClass="dashboard-content" spacing="16" style="-fx-background-color:#0F172A;">
+
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Notifications" styleClass="page-title" HBox.hgrow="ALWAYS"/>
+        <Button text="Mark All Read" styleClass="btn-outline-small" onAction="#handleMarkAllRead" id="markAllReadBtn"/>
+    </HBox>
+
+    <VBox styleClass="content-card" spacing="0">
+        <ScrollPane fitToWidth="true" prefHeight="500" styleClass="transparent-scroll" id="notifScroll">
+            <VBox fx:id="notifContainer" spacing="0"/>
+        </ScrollPane>
+    </VBox>
+</VBox>

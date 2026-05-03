@@ -2,115 +2,149 @@ package com.fyp.dao;
 
 import com.fyp.model.Milestone;
 import com.fyp.enums.MilestoneStatus;
-import com.fyp.util.DBConnection;
+import com.fyp.util.SupabaseClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.sql.*;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class MilestoneDAO {
 
-    public Optional<Milestone> findById(UUID milestoneId) throws SQLException {
-        String sql = "SELECT * FROM fyp.milestones WHERE milestone_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, milestoneId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
-            }
+    public Optional<Milestone> findById(UUID milestoneId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/milestones?milestone_id=eq." + milestoneId))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return Optional.of(mapRow(array.get(0).getAsJsonObject()));
         }
         return Optional.empty();
     }
 
-    public List<Milestone> findByProjectId(UUID projectId) throws SQLException {
+    public List<Milestone> findByProjectId(UUID projectId, String jwt) throws Exception {
         List<Milestone> list = new ArrayList<>();
-        String sql = "SELECT * FROM fyp.milestones WHERE project_id = ?::uuid ORDER BY deadline ASC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, projectId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/milestones?project_id=eq." + projectId + "&order=deadline.asc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
             }
         }
         return list;
     }
 
-    public UUID insert(Milestone m) throws SQLException {
-        String sql = "INSERT INTO fyp.milestones (title, description, deadline, weightage, status, project_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?::uuid) RETURNING milestone_id";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, m.getTitle());
-            ps.setString(2, m.getDescription());
-            ps.setObject(3, m.getDeadline());
-            ps.setInt(4, m.getWeightage());
-            ps.setString(5, m.getStatus().name());
-            ps.setString(6, m.getProjectId().toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return UUID.fromString(rs.getString("milestone_id"));
+    public UUID insert(Milestone m, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("title", m.getTitle());
+        json.addProperty("description", m.getDescription());
+        if (m.getDeadline() != null) json.addProperty("deadline", m.getDeadline().toString());
+        json.addProperty("weightage", m.getWeightage());
+        json.addProperty("status", m.getStatus().name());
+        json.addProperty("project_id", m.getProjectId().toString());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/milestones?select=milestone_id"))
+                .header("Prefer", "return=representation")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()));
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 201) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            return UUID.fromString(array.get(0).getAsJsonObject().get("milestone_id").getAsString());
+        }
+        throw new Exception("Failed to insert milestone: " + response.body());
+    }
+
+    public void updateStatus(UUID milestoneId, MilestoneStatus status, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("status", status.name());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/milestones?milestone_id=eq." + milestoneId))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
+    }
+
+    public void update(Milestone m, String jwt) throws Exception {
+        JsonObject json = new JsonObject();
+        json.addProperty("title", m.getTitle());
+        json.addProperty("description", m.getDescription());
+        if (m.getDeadline() != null) json.addProperty("deadline", m.getDeadline().toString());
+        json.addProperty("weightage", m.getWeightage());
+        json.addProperty("status", m.getStatus().name());
+
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/milestones?milestone_id=eq." + m.getMilestoneId()))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
+    }
+
+    public void delete(UUID milestoneId, String jwt) throws Exception {
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/milestones?milestone_id=eq." + milestoneId))
+                .DELETE();
+        SupabaseClient.sendAuthenticatedRequest(request, jwt);
+    }
+
+    public int[] getProgressCounts(UUID projectId, String jwt) throws Exception {
+        List<Milestone> milestones = findByProjectId(projectId, jwt);
+        int total = milestones.size();
+        int completed = 0;
+        for (Milestone m : milestones) {
+            if (m.getStatus() == MilestoneStatus.COMPLETED) {
+                completed++;
             }
         }
-        throw new SQLException("INSERT into fyp.milestones returned no ID.");
+        return new int[]{completed, total};
     }
 
-    public void updateStatus(UUID milestoneId, MilestoneStatus status) throws SQLException {
-        String sql = "UPDATE fyp.milestones SET status = ? WHERE milestone_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status.name());
-            ps.setString(2, milestoneId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    public void update(Milestone m) throws SQLException {
-        String sql = "UPDATE fyp.milestones SET title=?, description=?, deadline=?, weightage=?, status=? " +
-                     "WHERE milestone_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, m.getTitle());
-            ps.setString(2, m.getDescription());
-            ps.setObject(3, m.getDeadline());
-            ps.setInt(4, m.getWeightage());
-            ps.setString(5, m.getStatus().name());
-            ps.setString(6, m.getMilestoneId().toString());
-            ps.executeUpdate();
-        }
-    }
-
-    public void delete(UUID milestoneId) throws SQLException {
-        String sql = "DELETE FROM fyp.milestones WHERE milestone_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, milestoneId.toString());
-            ps.executeUpdate();
-        }
-    }
-
-    /** Returns (completed, total) milestone counts for a project */
-    public int[] getProgressCounts(UUID projectId) throws SQLException {
-        String sql = "SELECT COUNT(*) as total, " +
-                     "SUM(CASE WHEN status='COMPLETED' THEN 1 ELSE 0 END) as completed " +
-                     "FROM fyp.milestones WHERE project_id = ?::uuid";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, projectId.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return new int[]{rs.getInt("completed"), rs.getInt("total")};
-            }
-        }
-        return new int[]{0, 0};
-    }
-
-    private Milestone mapRow(ResultSet rs) throws SQLException {
+    private Milestone mapRow(JsonObject obj) {
         Milestone m = new Milestone();
-        m.setMilestoneId(UUID.fromString(rs.getString("milestone_id")));
-        m.setTitle(rs.getString("title"));
-        m.setDescription(rs.getString("description"));
-        Timestamp dl = rs.getTimestamp("deadline");
-        if (dl != null) m.setDeadline(dl.toLocalDateTime());
-        m.setWeightage(rs.getInt("weightage"));
-        m.setStatus(MilestoneStatus.valueOf(rs.getString("status")));
-        m.setProjectId(UUID.fromString(rs.getString("project_id")));
+        m.setMilestoneId(UUID.fromString(obj.get("milestone_id").getAsString()));
+        m.setTitle(obj.has("title") && !obj.get("title").isJsonNull() ? obj.get("title").getAsString() : "");
+        m.setDescription(obj.has("description") && !obj.get("description").isJsonNull() ? obj.get("description").getAsString() : "");
+        if (obj.has("deadline") && !obj.get("deadline").isJsonNull()) {
+            String deadlineStr = obj.get("deadline").getAsString();
+            try {
+                // Supabase returns TIMESTAMPTZ in ISO_OFFSET_DATE_TIME format
+                m.setDeadline(java.time.OffsetDateTime.parse(deadlineStr).toLocalDateTime());
+            } catch (Exception e) {
+                // Fallback for simple ISO format
+                m.setDeadline(java.time.LocalDateTime.parse(deadlineStr.split("\\+")[0].replace(" ", "T")));
+            }
+        }
+        m.setWeightage(obj.has("weightage") && !obj.get("weightage").isJsonNull() ? obj.get("weightage").getAsInt() : 0);
+        m.setStatus(MilestoneStatus.valueOf(obj.get("status").getAsString()));
+        m.setProjectId(UUID.fromString(obj.get("project_id").getAsString()));
         return m;
+    }
+
+    public List<Milestone> findAll(String jwt) throws Exception {
+        List<Milestone> list = new ArrayList<>();
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/milestones?order=deadline.asc"))
+                .GET();
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        
+        if (response.statusCode() == 200 && !response.body().equals("[]")) {
+            JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
+            for (JsonElement el : array) {
+                list.add(mapRow(el.getAsJsonObject()));
+            }
+        }
+        return list;
     }
 }

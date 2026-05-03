@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.fyp.controller.ProposalFormController"
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+
+    <Label text="Submit Project Proposal" styleClass="page-title"/>
+
+    <VBox styleClass="content-card" spacing="16">
+        <Label text="Proposal Title" styleClass="field-label"/>
+        <TextField fx:id="titleField" promptText="Enter project title" styleClass="text-field-dark" id="proposalTitleField"/>
+
+        <Label text="Problem Statement" styleClass="field-label"/>
+        <TextArea fx:id="problemField" promptText="Describe the problem you're solving..." styleClass="text-field-dark"
+                  prefHeight="100" wrapText="true" id="problemField"/>
+
+        <Label text="Proposed Solution" styleClass="field-label"/>
+        <TextArea fx:id="solutionField" promptText="Describe your approach..." styleClass="text-field-dark"
+                  prefHeight="100" wrapText="true" id="solutionField"/>
+
+        <Label text="Expected Outcomes" styleClass="field-label"/>
+        <TextArea fx:id="outcomesField" promptText="What will be delivered?" styleClass="text-field-dark"
+                  prefHeight="80" wrapText="true" id="outcomesField"/>
+
+        <HBox spacing="12">
+            <VBox HBox.hgrow="ALWAYS" spacing="6">
+                <Label text="Select Supervisor" styleClass="field-label"/>
+                <ComboBox fx:id="supervisorCombo" promptText="Choose supervisor" styleClass="combo-dark"
+                          maxWidth="Infinity" id="supervisorCombo"/>
+            </VBox>
+        </HBox>
+
+        <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
+
+        <HBox spacing="12">
+            <Button text="Save as Draft" styleClass="btn-outline-small" onAction="#handleSaveDraft" id="saveDraftBtn"/>
+            <Button text="Submit Proposal" styleClass="btn-primary" onAction="#handleSubmit" id="submitProposalBtn"/>
+        </HBox>
+    </VBox>
+
+    <VBox styleClass="content-card" spacing="12">
+        <Label text="My Proposals" styleClass="card-title"/>
+        <TableView fx:id="proposalsTable" prefHeight="240" styleClass="dark-table" id="proposalsTable">
+            <columns>
+                <TableColumn fx:id="titleCol"  text="Title"     prefWidth="280"/>
+                <TableColumn fx:id="statusCol" text="Status"    prefWidth="130"/>
+                <TableColumn fx:id="supCol"    text="Supervisor" prefWidth="180"/>
+                <TableColumn fx:id="dateCol"   text="Submitted" prefWidth="130"/>
+            </columns>
+        </TableView>
+    </VBox>
+</VBox>
