@@ -14,6 +14,7 @@ public class ExaminerDashboardController implements Initializable {
 
     @FXML private Label userNameLabel;
     @FXML private StackPane contentPane;
+    @FXML private javafx.scene.layout.VBox dashboardContent;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -22,7 +23,9 @@ public class ExaminerDashboardController implements Initializable {
         }
     }
 
-    @FXML void showDashboard() {}
+    @FXML void showDashboard() {
+        contentPane.getChildren().setAll(dashboardContent);
+    }
     @FXML void showGrading() {}
     @FXML void handleLogout() {
         SessionManager.clearSession();

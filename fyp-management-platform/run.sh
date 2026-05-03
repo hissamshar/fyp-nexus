@@ -5,14 +5,19 @@ echo "----------------------------------------------------"
 echo "🚀 Starting FYP Management Platform Setup..."
 echo "----------------------------------------------------"
 
-# 1. Check for Java (JDK 21+)
-if ! command -v java &> /dev/null; then
+# 1. Check for local Java or global Java (JDK 21+)
+LOCAL_JDK="$HOME/.jdk/jdk-21.0.2"
+if [ -d "$LOCAL_JDK" ]; then
+    echo "✅ Found local JDK 21 at $LOCAL_JDK"
+    export JAVA_HOME="$LOCAL_JDK"
+    export PATH="$JAVA_HOME/bin:$PATH"
+elif ! command -v java &> /dev/null; then
     echo "❌ Error: Java is not installed."
     echo "Please install JDK 21 or higher to run this application."
     exit 1
 fi
 
-# 2. Setup JAVA_HOME if not defined
+# 2. Setup JAVA_HOME if not defined (and no local JDK was found)
 if [ -z "$JAVA_HOME" ]; then
     echo "⚠️  JAVA_HOME is not set. Attempting to detect..."
     JAVA_PATH=$(readlink -f $(which java) 2>/dev/null)

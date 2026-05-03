@@ -64,7 +64,7 @@ public class ProjectProposalDAO {
     public List<ProjectProposal> findByStatus(ProposalStatus status, String jwt) throws Exception {
         List<ProjectProposal> list = new ArrayList<>();
         HttpRequest.Builder request = HttpRequest.newBuilder()
-                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/project_proposals?status=eq." + status.name() + "&order=created_at.desc"))
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/project_proposals?select=*,students(users(name))&status=eq." + status.name() + "&order=created_at.desc"))
                 .GET();
         HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
         
@@ -80,7 +80,7 @@ public class ProjectProposalDAO {
     public List<ProjectProposal> findAll(String jwt) throws Exception {
         List<ProjectProposal> list = new ArrayList<>();
         HttpRequest.Builder request = HttpRequest.newBuilder()
-                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/project_proposals?order=created_at.desc"))
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/project_proposals?select=*,students(users(name))&order=created_at.desc"))
                 .GET();
         HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
         
@@ -122,12 +122,19 @@ public class ProjectProposalDAO {
     public void updateStatus(UUID proposalId, ProposalStatus status, String rejectionComment, String jwt) throws Exception {
         JsonObject json = new JsonObject();
         json.addProperty("status", status.name());
-        json.addProperty("rejection_comment", rejectionComment);
+        
+        if (status == ProposalStatus.REJECTED || status == ProposalStatus.REVISION_REQUESTED) {
+            json.addProperty("rejection_comment", rejectionComment);
+        }
 
         HttpRequest.Builder request = HttpRequest.newBuilder()
                 .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/project_proposals?proposal_id=eq." + proposalId))
+                .header("Prefer", "return=representation")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(json.toString()));
-        SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        HttpResponse<String> response = SupabaseClient.sendAuthenticatedRequest(request, jwt);
+        if (response.statusCode() >= 400 || response.body().equals("[]")) {
+            throw new Exception("Failed to update status. " + (response.body().equals("[]") ? "RLS policy prevented update." : response.body()));
+        }
     }
 
     public void update(ProjectProposal p, String jwt) throws Exception {

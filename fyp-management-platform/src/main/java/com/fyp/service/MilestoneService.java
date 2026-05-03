@@ -76,38 +76,50 @@ public class MilestoneService {
 
     // ── Adapter methods for controllers ──────────────────────────────────────
 
-    /** For students: get all milestones across their projects. */
+    /** For students: get all milestones across their active project. */
     public List<Milestone> getMilestonesForCurrentUser(String token) {
         try {
             var user = SessionManager.getCurrentUser();
             if ("STUDENT".equals(user.getRole())) {
-                var proposals = new com.fyp.dao.ProjectProposalDAO()
-                    .findByStudentId(((com.fyp.model.Student) user).getStudentId(), token);
+                // Resolve student's active project directly via user ID
+                var projectOpt = new com.fyp.dao.ProjectDAO().findByStudentUserId(user.getUserId(), token);
+                if (projectOpt.isEmpty()) return new java.util.ArrayList<>();
+                return milestoneDAO.findByProjectId(projectOpt.get().getProjectId(), token);
+            } else if ("SUPERVISOR".equals(user.getRole())) {
+                // Only show milestones for the supervisor's own projects
+                var supervisorOpt = new com.fyp.dao.SupervisorDAO().findByUserId(user.getUserId(), token);
+                if (supervisorOpt.isEmpty()) return new java.util.ArrayList<>();
+                var projects = new com.fyp.dao.ProjectDAO().findBySupervisorId(
+                    supervisorOpt.get().getSupervisorId(), token);
                 List<Milestone> all = new java.util.ArrayList<>();
-                for (var prop : proposals) {
-                    new com.fyp.dao.ProjectDAO().findByProposalId(prop.getProposalId(), token)
-                        .ifPresent(p -> {
-                            try {
-                                all.addAll(milestoneDAO.findByProjectId(p.getProjectId(), token));
-                            } catch (Exception ignored) {}
-                        });
+                for (var p : projects) {
+                    all.addAll(milestoneDAO.findByProjectId(p.getProjectId(), token));
                 }
                 return all;
             }
-            // Supervisors/admins see all
+            // Admins see all
             return milestoneDAO.findAll(token);
         } catch (Exception e) { e.printStackTrace(); return new java.util.ArrayList<>(); }
     }
 
-    /** Simplified create for student/controller use (no weightage/project required). */
+    /** Simplified create for student/controller use. Resolves active project ID automatically. */
     public Milestone createMilestone(String title, String description,
                                      java.time.LocalDate dueDate, String token) {
         try {
+            var user = SessionManager.getCurrentUser();
             Milestone m = new Milestone();
             m.setTitle(title);
             m.setDescription(description);
             m.setDueDate(dueDate);
             m.setStatus(MilestoneStatus.PENDING);
+
+            // Resolve the student's active project — required for DB insert
+            var projectOpt = new com.fyp.dao.ProjectDAO().findByStudentUserId(user.getUserId(), token);
+            if (projectOpt.isEmpty()) {
+                throw new Exception("No active project found. Submit and get a proposal approved first.");
+            }
+            m.setProjectId(projectOpt.get().getProjectId());
+
             UUID id = milestoneDAO.insert(m, token);
             m.setMilestoneId(id);
             return m;

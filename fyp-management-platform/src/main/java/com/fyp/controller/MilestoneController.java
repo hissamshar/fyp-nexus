@@ -10,7 +10,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 
 import java.net.URL;
 import java.time.LocalDate;
@@ -39,6 +38,8 @@ public class MilestoneController implements Initializable {
             }
         };
         t.setOnSucceeded(e -> Platform.runLater(() -> renderMilestones(t.getValue())));
+        t.setOnFailed(e -> Platform.runLater(() ->
+            showError("Failed to load milestones: " + t.getException().getMessage())));
         new Thread(t).start();
     }
 
@@ -58,16 +59,19 @@ public class MilestoneController implements Initializable {
     private VBox buildMilestoneCard(Milestone m) {
         VBox card = new VBox(8);
         card.setPadding(new Insets(16));
-        card.setStyle("-fx-background-color:#1E293B; -fx-background-radius:10; -fx-border-color:" +
-            (m.getStatus().name().equals("COMPLETED") ? "#10B981" :
-             m.getStatus().name().equals("OVERDUE")   ? "#EF4444" : "#334155") + ";" +
-            "-fx-border-radius:10; -fx-border-width: 0 0 0 4;");
+        String borderColor = switch (m.getStatus()) {
+            case COMPLETED -> "#10B981";
+            case OVERDUE   -> "#EF4444";
+            default        -> "#334155";
+        };
+        card.setStyle("-fx-background-color:#1E293B; -fx-background-radius:10;" +
+            "-fx-border-color:" + borderColor + "; -fx-border-radius:10; -fx-border-width: 0 0 0 4;");
 
         Label title  = new Label("🎯  " + m.getTitle());
         title.setStyle("-fx-text-fill:#F8FAFC; -fx-font-size:15; -fx-font-weight:bold;");
 
-        Label status = new Label("Status: " + m.getStatus().name() +
-            (m.getDueDate() != null ? "  •  Due: " + m.getDueDate().toString() : ""));
+        String duePart = m.getDueDate() != null ? "  •  Due: " + m.getDueDate() : "";
+        Label status = new Label("Status: " + m.getStatus().name() + duePart);
         status.setStyle("-fx-text-fill:#94A3B8; -fx-font-size:13;");
 
         Label desc = new Label(m.getDescription() != null ? m.getDescription() : "");
@@ -76,10 +80,9 @@ public class MilestoneController implements Initializable {
 
         HBox actions = new HBox(8);
         Button markDone = new Button("✅ Mark Complete");
-        markDone.setStyle("-fx-background-color:#059669; -fx-text-fill:white; -fx-background-radius:6; -fx-cursor:hand; -fx-padding:6 14;");
+        markDone.getStyleClass().add("btn-success");
         markDone.setOnAction(e -> markComplete(m));
-
-        if ("COMPLETED".equals(m.getStatus().name())) markDone.setDisable(true);
+        if (m.getStatus().name().equals("COMPLETED")) markDone.setDisable(true);
         actions.getChildren().add(markDone);
 
         card.getChildren().addAll(title, status, desc, actions);
@@ -92,7 +95,8 @@ public class MilestoneController implements Initializable {
                 return milestoneService.markComplete(m.getMilestoneId(), SessionManager.getJwtToken());
             }
         };
-        t.setOnSucceeded(e -> { if (t.getValue()) loadMilestones(); });
+        t.setOnSucceeded(e -> Platform.runLater(() -> { if (t.getValue()) loadMilestones(); }));
+        t.setOnFailed(e -> Platform.runLater(() -> showError("Failed to update milestone.")));
         new Thread(t).start();
     }
 
@@ -102,6 +106,7 @@ public class MilestoneController implements Initializable {
         if (title.isEmpty()) { showError("Title is required."); return; }
         LocalDate due = mDueDatePicker.getValue();
         String desc = mDescField.getText().trim();
+        hideError();
 
         Task<Milestone> t = new Task<>() {
             @Override protected Milestone call() throws Exception {
@@ -109,14 +114,31 @@ public class MilestoneController implements Initializable {
             }
         };
         t.setOnSucceeded(e -> Platform.runLater(() -> {
-            mTitleField.clear(); mDescField.clear(); mDueDatePicker.setValue(null);
-            loadMilestones();
+            if (t.getValue() != null) {
+                mTitleField.clear();
+                mDescField.clear();
+                mDueDatePicker.setValue(null);
+                loadMilestones();
+            } else {
+                showError("Failed to add milestone. Make sure you have an approved project.");
+            }
         }));
-        t.setOnFailed(e -> showError("Failed to add milestone."));
+        t.setOnFailed(e -> Platform.runLater(() ->
+            showError(t.getException() != null
+                ? t.getException().getMessage()
+                : "Failed to add milestone.")));
         new Thread(t).start();
     }
 
     private void showError(String msg) {
-        errorLabel.setText(msg); errorLabel.setVisible(true); errorLabel.setManaged(true);
+        errorLabel.setText(msg);
+        errorLabel.setStyle("-fx-text-fill:#F87171;-fx-background-color:rgba(248,113,113,0.1);-fx-padding:8 12;-fx-background-radius:6;");
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+    }
+
+    private void hideError() {
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
     }
 }

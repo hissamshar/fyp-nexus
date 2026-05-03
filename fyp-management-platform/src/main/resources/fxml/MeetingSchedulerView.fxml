@@ -5,7 +5,7 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.MeetingSchedulerController"
-      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#F5F5F7;">
 
     <Label text="Meetings" styleClass="page-title"/>
 
@@ -42,10 +42,8 @@
                 </columns>
             </TableView>
             <HBox spacing="8">
-                <Button text="✅ Accept"   styleClass="btn-primary" onAction="#handleAccept"    id="acceptMeetingBtn"
-                        style="-fx-background-color:linear-gradient(to right,#059669,#10B981);"/>
-                <Button text="❌ Decline"  styleClass="btn-primary" onAction="#handleDecline"   id="declineMeetingBtn"
-                        style="-fx-background-color:linear-gradient(to right,#DC2626,#EF4444);"/>
+                <Button text="✅ Accept"   styleClass="btn-success" onAction="#handleAccept"    id="acceptMeetingBtn"/>
+                <Button text="❌ Decline"  styleClass="btn-danger" onAction="#handleDecline"   id="declineMeetingBtn"/>
                 <Button text="🔄 Reschedule" styleClass="btn-outline-small" onAction="#handleReschedule" id="rescheduleMeetingBtn"/>
             </HBox>
         </VBox>

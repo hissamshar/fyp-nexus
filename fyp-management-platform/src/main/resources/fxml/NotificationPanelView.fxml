@@ -5,7 +5,7 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.NotificationPanelController"
-      styleClass="dashboard-content" spacing="16" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="16" style="-fx-background-color:#F5F5F7;">
 
     <HBox alignment="CENTER_LEFT" spacing="12">
         <Label text="Notifications" styleClass="page-title" HBox.hgrow="ALWAYS"/>

@@ -5,7 +5,7 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.IndustryProblemsController"
-      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#F5F5F7;">
 
     <HBox alignment="CENTER_LEFT" spacing="12">
         <Label text="Industry Problems" styleClass="page-title" HBox.hgrow="ALWAYS"/>
@@ -19,20 +19,20 @@
         <VBox styleClass="content-card" spacing="12" prefWidth="360">
             <Label text="Available Problems" styleClass="card-title"/>
             <ListView fx:id="problemsList" VBox.vgrow="ALWAYS" prefHeight="480" id="problemsList"
-                      style="-fx-background-color:#0F172A; -fx-border-color:#334155; -fx-border-radius:6;"/>
+                      style="-fx-background-color:#FBFBFD; -fx-border-color:#E8E8ED; -fx-border-radius:8;"/>
         </VBox>
 
         <!-- Detail view -->
         <VBox styleClass="content-card" spacing="14" HBox.hgrow="ALWAYS">
             <Label text="Problem Details" styleClass="card-title"/>
             <Label text="Title:" styleClass="field-label"/>
-            <Label fx:id="problemTitle" style="-fx-text-fill:#F8FAFC; -fx-font-size:16; -fx-font-weight:bold;"/>
+            <Label fx:id="problemTitle" style="-fx-text-fill:#1D1D1F; -fx-font-size:16; -fx-font-weight:bold;"/>
 
             <Label text="Company:" styleClass="field-label"/>
-            <Label fx:id="problemCompany" style="-fx-text-fill:#818CF8;"/>
+            <Label fx:id="problemCompany" style="-fx-text-fill:#007AFF;"/>
 
             <Label text="Domain:" styleClass="field-label"/>
-            <Label fx:id="problemDomain" style="-fx-text-fill:#E2E8F0;"/>
+            <Label fx:id="problemDomain" style="-fx-text-fill:#3A3A3C;"/>
 
             <Label text="Description:" styleClass="field-label"/>
             <TextArea fx:id="problemDesc" editable="false" styleClass="text-field-dark"

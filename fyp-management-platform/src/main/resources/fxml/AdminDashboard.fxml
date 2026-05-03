@@ -6,10 +6,14 @@
             fx:controller="com.fyp.controller.AdminDashboardController"
             styleClass="root-pane" prefWidth="1200" prefHeight="750">
     <top>
-        <HBox styleClass="top-bar" alignment="CENTER_LEFT">
+        <!-- Issue 14 fix: spacing="12"; Issue 15: add notification bell -->
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
             <Label text="FYP Platform" styleClass="top-bar-logo"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="userNameLabel" styleClass="top-bar-user"/>
+            <Button fx:id="notifBtn" styleClass="notif-btn" onAction="#openNotifications" id="adminNotifBtn">
+                <graphic><StackPane><Label text="🔔" style="-fx-font-size:18;"/><Label fx:id="notifBadge" styleClass="notif-badge" text="0"/></StackPane></graphic>
+            </Button>
             <Button text="Logout" styleClass="btn-outline-small" onAction="#handleLogout" id="adminLogoutBtn"/>
         </HBox>
     </top>
@@ -29,9 +33,9 @@
         </VBox>
     </left>
     <center>
-        <StackPane fx:id="contentPane" styleClass="content-pane">
-            <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
-                <VBox spacing="24" styleClass="dashboard-content">
+        <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+            <StackPane fx:id="contentPane" styleClass="content-pane">
+                <VBox fx:id="dashboardContent" spacing="24" styleClass="dashboard-content">
                     <Label text="System Overview" styleClass="page-title"/>
                     <HBox spacing="16">
                         <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS"><Label text="Total Users"    styleClass="stat-label"/><Label fx:id="totalUsersLabel"    text="0" styleClass="stat-value"/></VBox>
@@ -53,7 +57,7 @@
                         </VBox>
                     </HBox>
                 </VBox>
-            </ScrollPane>
-        </StackPane>
+            </StackPane>
+        </ScrollPane>
     </center>
 </BorderPane>

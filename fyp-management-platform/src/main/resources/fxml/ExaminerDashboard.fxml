@@ -22,11 +22,13 @@
         </VBox>
     </left>
     <center>
-        <StackPane fx:id="contentPane" styleClass="content-pane">
-            <VBox spacing="24" styleClass="dashboard-content">
-                <Label text="Assigned Projects for Grading" styleClass="page-title"/>
-                <Label text="Grading module coming soon." styleClass="login-subtitle"/>
-            </VBox>
-        </StackPane>
+        <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+            <StackPane fx:id="contentPane" styleClass="content-pane">
+                <VBox fx:id="dashboardContent" spacing="24" styleClass="dashboard-content">
+                    <Label text="Assigned Projects for Grading" styleClass="page-title"/>
+                    <Label text="Grading module coming soon." styleClass="login-subtitle"/>
+                </VBox>
+            </StackPane>
+        </ScrollPane>
     </center>
 </BorderPane>

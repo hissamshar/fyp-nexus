@@ -5,17 +5,17 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.ProfileController"
-      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#F5F5F7;">
 
     <Label text="My Profile" styleClass="page-title"/>
 
     <HBox spacing="20">
         <!-- Profile card -->
         <VBox styleClass="content-card" spacing="16" prefWidth="280" alignment="CENTER">
-            <Label fx:id="avatarLabel" text="👤" style="-fx-font-size:72; -fx-text-fill:#818CF8;"/>
-            <Label fx:id="profileName" text="—" style="-fx-text-fill:#F8FAFC; -fx-font-size:20; -fx-font-weight:bold;"/>
-            <Label fx:id="profileRole" text="—" style="-fx-text-fill:#818CF8; -fx-font-size:14;"/>
-            <Label fx:id="profileEmail" text="—" style="-fx-text-fill:#94A3B8;"/>
+            <Label fx:id="avatarLabel" text="👤" style="-fx-font-size:72; -fx-text-fill:#007AFF;"/>
+            <Label fx:id="profileName" text="—" style="-fx-text-fill:#1D1D1F; -fx-font-size:20; -fx-font-weight:bold;"/>
+            <Label fx:id="profileRole" text="—" style="-fx-text-fill:#007AFF; -fx-font-size:14;"/>
+            <Label fx:id="profileEmail" text="—" style="-fx-text-fill:#86868B;"/>
             <Separator/>
             <Label fx:id="profileMember" text="" style="-fx-text-fill:#64748B; -fx-font-size:12;"/>
         </VBox>
@@ -29,7 +29,7 @@
             <Label text="Email (read-only)" styleClass="field-label"/>
             <TextField fx:id="emailField" styleClass="text-field-dark" editable="false" id="profileEmailField"/>
 
-            <Separator style="-fx-background-color:#334155;"/>
+            <Separator style="-fx-background-color:#E8E8ED;"/>
             <Label text="Change Password" styleClass="card-title"/>
 
             <Label text="Current Password" styleClass="field-label"/>

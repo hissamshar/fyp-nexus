@@ -62,4 +62,20 @@ public class SessionManager {
     public static String getCurrentRole() {
         return currentUser != null ? currentUser.getRole() : null;
     }
+
+    // ── Cross-view context passing ─────────────────────────────────────────────
+
+    private static final java.util.Map<String, Object> context = new java.util.HashMap<>();
+
+    public static void setContext(String key, Object value) {
+        context.put(key, value);
+    }
+
+    public static Object getContext(String key) {
+        return context.get(key);
+    }
+
+    public static void clearContext(String key) {
+        context.remove(key);
+    }
 }

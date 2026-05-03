@@ -13,6 +13,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
 import java.net.URL;
 import java.util.List;
@@ -24,8 +25,14 @@ public class StudentDashboardController implements Initializable {
     @FXML private Label proposalCountLabel, milestoneCountLabel, meetingCountLabel, notifCountLabel;
     @FXML private Label notifBadge;
     @FXML private StackPane contentPane;
+    @FXML private VBox dashboardContent;
     @FXML private TableView<ProjectProposal> proposalsTable;
     @FXML private TableColumn<ProjectProposal, String> propTitleCol, propStatusCol, propDateCol;
+
+    // Sidebar buttons for active state tracking
+    @FXML private Button navDashboard, navProposals, navMilestones, navDeliverables,
+                         navProgress, navDiscussion, navMeetings, navGrades, navIndustry, navProfile;
+    private Button activeNavBtn;
 
     private final ProposalService proposalService   = new ProposalService();
     private final MilestoneService milestoneService = new MilestoneService();
@@ -45,6 +52,8 @@ public class StudentDashboardController implements Initializable {
         propDateCol.setCellValueFactory(c -> new SimpleStringProperty(
             c.getValue().getSubmissionDate() != null ? c.getValue().getSubmissionDate().toString() : "—"));
 
+        // Set initial active state on dashboard button
+        activeNavBtn = navDashboard;
         loadDashboardData();
     }
 
@@ -70,22 +79,38 @@ public class StudentDashboardController implements Initializable {
         new Thread(task).start();
     }
 
-    // ── Navigation ────────────────────────────────────────────────────────────
-    @FXML void showDashboard()      { loadDashboardData(); }
-    @FXML void showProposals()      { loadSubView("ProposalFormView"); }
-    @FXML void showMilestones()     { loadSubView("MilestoneView"); }
-    @FXML void showDeliverables()   { loadSubView("DeliverableUploadView"); }
-    @FXML void showProgressReport() { loadSubView("ProgressReportView"); }
-    @FXML void showDiscussion()     { loadSubView("DiscussionBoardView"); }
-    @FXML void showMeetings()       { loadSubView("MeetingSchedulerView"); }
-    @FXML void showGrades()         { loadSubView("GradingView"); }
-    @FXML void showIndustry()       { loadSubView("IndustryProblemsView"); }
-    @FXML void showProfile()        { loadSubView("ProfileView"); }
+    // ── Navigation ─────────────────────────────────────────────────────────────
+
+    @FXML void showDashboard()      { 
+        setActive(navDashboard);    
+        contentPane.getChildren().setAll(dashboardContent);
+        loadDashboardData(); 
+    }
+    @FXML void showProposals()      { setActive(navProposals);    loadSubView("ProposalFormView"); }
+    @FXML void showMilestones()     { setActive(navMilestones);   loadSubView("MilestoneView"); }
+    @FXML void showDeliverables()   { setActive(navDeliverables); loadSubView("DeliverableUploadView"); }
+    @FXML void showProgressReport() { setActive(navProgress);     loadSubView("ProgressReportView"); }
+    @FXML void showDiscussion()     { setActive(navDiscussion);   loadSubView("DiscussionBoardView"); }
+    @FXML void showMeetings()       { setActive(navMeetings);     loadSubView("MeetingSchedulerView"); }
+    @FXML void showGrades()         { setActive(navGrades);       loadSubView("GradingView"); }
+    @FXML void showIndustry()       { setActive(navIndustry);     loadSubView("IndustryProblemsView"); }
+    @FXML void showProfile()        { setActive(navProfile);      loadSubView("ProfileView"); }
     @FXML void openNotifications()  { loadSubView("NotificationPanelView"); }
 
     @FXML void handleLogout() {
         SessionManager.clearSession();
         Main.loadView("LoginView");
+    }
+
+    /** Toggle sidebar active highlight to the given button. */
+    private void setActive(Button btn) {
+        if (activeNavBtn != null) {
+            activeNavBtn.getStyleClass().remove("sidebar-btn-active");
+        }
+        if (btn != null) {
+            btn.getStyleClass().add("sidebar-btn-active");
+        }
+        activeNavBtn = btn;
     }
 
     private void loadSubView(String viewName) {
@@ -95,12 +120,13 @@ public class StudentDashboardController implements Initializable {
             Parent view = loader.load();
             contentPane.getChildren().setAll(view);
         } catch (Exception e) {
-            showPlaceholder(viewName);
+            showPlaceholder(viewName + " — coming soon");
+            e.printStackTrace();
         }
     }
 
-    private void showPlaceholder(String viewName) {
-        Label lbl = new Label(viewName + " — Coming Soon");
+    private void showPlaceholder(String msg) {
+        Label lbl = new Label(msg);
         lbl.setStyle("-fx-text-fill: #9090C0; -fx-font-size: 18;");
         contentPane.getChildren().setAll(lbl);
     }

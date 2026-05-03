@@ -9,7 +9,7 @@
 
     <!-- TOP BAR -->
     <top>
-        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="0">
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
             <Label text="FYP Platform" styleClass="top-bar-logo"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="userNameLabel" styleClass="top-bar-user"/>
@@ -29,43 +29,43 @@
     <left>
         <VBox styleClass="sidebar" spacing="4" prefWidth="210">
             <Label text="STUDENT MENU" styleClass="sidebar-section-label"/>
-            <Button text="🏠  Dashboard"       styleClass="sidebar-btn sidebar-btn-active" onAction="#showDashboard"    id="navDashboard"/>
-            <Button text="📄  My Proposals"    styleClass="sidebar-btn" onAction="#showProposals"     id="navProposals"/>
-            <Button text="🎯  Milestones"      styleClass="sidebar-btn" onAction="#showMilestones"    id="navMilestones"/>
-            <Button text="📁  Deliverables"    styleClass="sidebar-btn" onAction="#showDeliverables"  id="navDeliverables"/>
-            <Button text="📊  Progress Report" styleClass="sidebar-btn" onAction="#showProgressReport" id="navProgress"/>
-            <Button text="💬  Discussion"      styleClass="sidebar-btn" onAction="#showDiscussion"    id="navDiscussion"/>
-            <Button text="📅  Meetings"        styleClass="sidebar-btn" onAction="#showMeetings"      id="navMeetings"/>
-            <Button text="🏆  My Grades"       styleClass="sidebar-btn" onAction="#showGrades"        id="navGrades"/>
-            <Button text="🏭  Industry Probs"  styleClass="sidebar-btn" onAction="#showIndustry"      id="navIndustry"/>
-            <Button text="👤  Profile"         styleClass="sidebar-btn" onAction="#showProfile"       id="navProfile"/>
+            <Button fx:id="navDashboard"   text="🏠  Dashboard"       styleClass="sidebar-btn sidebar-btn-active" onAction="#showDashboard"    id="navDashboard"/>
+            <Button fx:id="navProposals"   text="📄  My Proposals"    styleClass="sidebar-btn" onAction="#showProposals"     id="navProposals"/>
+            <Button fx:id="navMilestones"  text="🎯  Milestones"      styleClass="sidebar-btn" onAction="#showMilestones"    id="navMilestones"/>
+            <Button fx:id="navDeliverables" text="📁  Deliverables"   styleClass="sidebar-btn" onAction="#showDeliverables"  id="navDeliverables"/>
+            <Button fx:id="navProgress"    text="📊  Progress Report" styleClass="sidebar-btn" onAction="#showProgressReport" id="navProgress"/>
+            <Button fx:id="navDiscussion"  text="💬  Discussion"      styleClass="sidebar-btn" onAction="#showDiscussion"    id="navDiscussion"/>
+            <Button fx:id="navMeetings"    text="📅  Meetings"        styleClass="sidebar-btn" onAction="#showMeetings"      id="navMeetings"/>
+            <Button fx:id="navGrades"      text="🏆  My Grades"       styleClass="sidebar-btn" onAction="#showGrades"        id="navGrades"/>
+            <Button fx:id="navIndustry"    text="🏭  Industry Probs"  styleClass="sidebar-btn" onAction="#showIndustry"      id="navIndustry"/>
+            <Button fx:id="navProfile"     text="👤  Profile"         styleClass="sidebar-btn" onAction="#showProfile"       id="navProfile"/>
             <Region VBox.vgrow="ALWAYS"/>
         </VBox>
     </left>
 
     <!-- CENTER CONTENT -->
     <center>
-        <StackPane fx:id="contentPane" styleClass="content-pane">
-            <!-- Default dashboard content -->
-            <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
-                <VBox spacing="24" styleClass="dashboard-content">
+        <ScrollPane fitToWidth="true" styleClass="transparent-scroll">
+            <StackPane fx:id="contentPane" styleClass="content-pane">
+                <!-- Default dashboard content -->
+                <VBox fx:id="dashboardContent" spacing="24" styleClass="dashboard-content">
                     <Label fx:id="welcomeLabel" text="Welcome back!" styleClass="page-title"/>
 
-                    <!-- Stats row -->
+                    <!-- Stats row — Issue 8 fix: color variants applied -->
                     <HBox spacing="16">
-                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS">
                             <Label text="My Proposals" styleClass="stat-label"/>
                             <Label fx:id="proposalCountLabel" text="0" styleClass="stat-value"/>
                         </VBox>
-                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <VBox styleClass="stat-card stat-card-blue" HBox.hgrow="ALWAYS">
                             <Label text="Active Milestones" styleClass="stat-label"/>
                             <Label fx:id="milestoneCountLabel" text="0" styleClass="stat-value"/>
                         </VBox>
-                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <VBox styleClass="stat-card stat-card-teal" HBox.hgrow="ALWAYS">
                             <Label text="Upcoming Meetings" styleClass="stat-label"/>
                             <Label fx:id="meetingCountLabel" text="0" styleClass="stat-value"/>
                         </VBox>
-                        <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <VBox styleClass="stat-card stat-card-orange" HBox.hgrow="ALWAYS">
                             <Label text="Notifications" styleClass="stat-label"/>
                             <Label fx:id="notifCountLabel" text="0" styleClass="stat-value"/>
                         </VBox>
@@ -83,7 +83,7 @@
                         </TableView>
                     </VBox>
                 </VBox>
-            </ScrollPane>
-        </StackPane>
+            </StackPane>
+        </ScrollPane>
     </center>
 </BorderPane>

@@ -5,7 +5,7 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.GradingController"
-      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#F5F5F7;">
 
     <Label text="Grade Projects" styleClass="page-title"/>
 
@@ -29,10 +29,10 @@
         </TableView>
 
         <HBox spacing="16" alignment="CENTER_LEFT">
-            <Label text="Total Score:" style="-fx-text-fill:#94A3B8; -fx-font-weight:bold;"/>
-            <Label fx:id="totalScoreLabel" text="0 / 0" style="-fx-text-fill:#818CF8; -fx-font-size:20; -fx-font-weight:bold;"/>
+            <Label text="Total Score:" style="-fx-text-fill:#86868B; -fx-font-weight:bold;"/>
+            <Label fx:id="totalScoreLabel" text="0 / 0" style="-fx-text-fill:#007AFF; -fx-font-size:20; -fx-font-weight:bold;"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label text="Grade:" style="-fx-text-fill:#94A3B8; -fx-font-weight:bold;"/>
+            <Label text="Grade:" style="-fx-text-fill:#86868B; -fx-font-weight:bold;"/>
             <Label fx:id="gradeLabel" text="—" style="-fx-text-fill:#10B981; -fx-font-size:24; -fx-font-weight:bold;"/>
         </HBox>
     </VBox>

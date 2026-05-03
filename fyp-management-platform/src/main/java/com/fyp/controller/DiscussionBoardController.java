@@ -32,10 +32,14 @@ public class DiscussionBoardController implements Initializable {
             @Override
             protected void updateItem(DiscussionThread t, boolean empty) {
                 super.updateItem(t, empty);
-                if (empty || t == null) { setText(null); }
-                else {
+                if (empty || t == null) {
+                    // Fix Issue 11 — always clear style/text/graphic on empty cells
+                    setText(null);
+                    setGraphic(null);
+                    setStyle(null);
+                } else {
                     setText(t.getTitle());
-                    setStyle("-fx-text-fill:#F8FAFC; -fx-padding:10; -fx-font-size:13;");
+                    setStyle("-fx-text-fill:#F8FAFC; -fx-padding:10; -fx-font-size:13; -fx-background-color:transparent;");
                 }
             }
         });
@@ -51,7 +55,15 @@ public class DiscussionBoardController implements Initializable {
                 return discussionService.getThreadsForCurrentProject(SessionManager.getJwtToken());
             }
         };
-        t.setOnSucceeded(e -> threadList.setItems(FXCollections.observableArrayList(t.getValue())));
+        t.setOnSucceeded(e -> Platform.runLater(() -> {
+            List<DiscussionThread> threads = t.getValue();
+            threadList.setItems(FXCollections.observableArrayList(threads));
+            if (threads.isEmpty()) {
+                threadTitleLabel.setText("No threads yet — create one with the + button");
+            }
+        }));
+        t.setOnFailed(e -> Platform.runLater(() ->
+            threadTitleLabel.setText("Failed to load threads.")));
         new Thread(t).start();
     }
 
@@ -64,12 +76,19 @@ public class DiscussionBoardController implements Initializable {
             }
         };
         t.setOnSucceeded(e -> Platform.runLater(() -> renderPosts(t.getValue())));
+        t.setOnFailed(e -> Platform.runLater(() -> postsContainer.getChildren().clear()));
         new Thread(t).start();
     }
 
     private void renderPosts(List<Post> posts) {
         postsContainer.getChildren().clear();
         User me = SessionManager.getCurrentUser();
+        if (posts.isEmpty()) {
+            Label empty = new Label("No posts yet. Be the first to reply!");
+            empty.setStyle("-fx-text-fill:#64748B; -fx-font-size:13; -fx-padding:12;");
+            postsContainer.getChildren().add(empty);
+            return;
+        }
         for (Post p : posts) {
             boolean isMe = me != null && me.getUserId().equals(p.getAuthorId());
             VBox bubble = new VBox(4);
@@ -102,10 +121,14 @@ public class DiscussionBoardController implements Initializable {
                 return discussionService.addPostUI(selectedThread.getThreadId(), content, SessionManager.getJwtToken());
             }
         };
-        t.setOnSucceeded(e -> {
+        t.setOnSucceeded(e -> Platform.runLater(() -> {
             replyField.clear();
             loadPosts(selectedThread);
-        });
+        }));
+        t.setOnFailed(e -> Platform.runLater(() -> {
+            // Show feedback in a non-intrusive way
+            replyField.setStyle("-fx-border-color:#F87171;");
+        }));
         new Thread(t).start();
     }
 
@@ -117,12 +140,19 @@ public class DiscussionBoardController implements Initializable {
         dlg.setContentText("Thread title:");
         dlg.getEditor().setStyle("-fx-background-color:#1E293B;-fx-text-fill:#F8FAFC;");
         dlg.showAndWait().ifPresent(title -> {
+            if (title.trim().isEmpty()) return;
             Task<DiscussionThread> t = new Task<>() {
                 @Override protected DiscussionThread call() throws Exception {
-                    return discussionService.createThread(title, SessionManager.getJwtToken());
+                    return discussionService.createThread(title.trim(), SessionManager.getJwtToken());
                 }
             };
-            t.setOnSucceeded(e -> loadThreads());
+            t.setOnSucceeded(e -> Platform.runLater(() -> {
+                if (t.getValue() != null) {
+                    loadThreads();
+                } else {
+                    threadTitleLabel.setText("Failed to create thread — no active project found.");
+                }
+            }));
             new Thread(t).start();
         });
     }

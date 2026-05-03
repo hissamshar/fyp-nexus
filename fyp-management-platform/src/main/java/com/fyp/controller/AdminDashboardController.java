@@ -14,6 +14,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
 import java.net.URL;
 import java.util.List;
@@ -23,7 +24,9 @@ import java.util.ResourceBundle;
 public class AdminDashboardController implements Initializable {
 
     @FXML private Label userNameLabel, totalUsersLabel, activeProjectsLabel, pendingLabel, completedLabel;
+    @FXML private Label notifBadge;
     @FXML private StackPane contentPane;
+    @FXML private VBox dashboardContent;
     @FXML private TableView<AuditLogEntry> auditTable;
     @FXML private TableColumn<AuditLogEntry,String> auditActionCol, auditTimeCol, auditIpCol, auditDetailCol;
 
@@ -66,16 +69,20 @@ public class AdminDashboardController implements Initializable {
         new Thread(task).start();
     }
 
-    @FXML void showDashboard()  { loadData(); }
-    @FXML void showUsers()      { loadSubView("UserManagementView"); }
-    @FXML void showDeadlines()  { loadSubView("DeadlineManagementView"); }
-    @FXML void showAnalytics()  { loadSubView("AnalyticsDashboardView"); }
-    @FXML void showReports()    { loadSubView("ReportGenerationView"); }
-    @FXML void showAuditLogs()  { loadData(); }
-    @FXML void showIndustry()   { loadSubView("IndustryProblemsView"); }
-    @FXML void showRepository() { loadSubView("RepositoryView"); }
-    @FXML void showProfile()    { loadSubView("ProfileView"); }
-    @FXML void handleLogout()   { SessionManager.clearSession(); Main.loadView("LoginView"); }
+    @FXML void showDashboard()    { 
+        contentPane.getChildren().setAll(dashboardContent);
+        loadData(); 
+    }
+    @FXML void showUsers()        { loadSubView("UserManagementView"); }
+    @FXML void showDeadlines()    { loadSubView("DeadlineManagementView"); }
+    @FXML void showAnalytics()    { loadSubView("AnalyticsDashboardView"); }
+    @FXML void showReports()      { loadSubView("ReportGenerationView"); }
+    @FXML void showAuditLogs()    { loadData(); }
+    @FXML void showIndustry()     { loadSubView("IndustryProblemsView"); }
+    @FXML void showRepository()   { loadSubView("RepositoryView"); }
+    @FXML void showProfile()      { loadSubView("ProfileView"); }
+    @FXML void openNotifications(){ loadSubView("NotificationPanelView"); }
+    @FXML void handleLogout()     { SessionManager.clearSession(); Main.loadView("LoginView"); }
 
     private void loadSubView(String name) {
         try {

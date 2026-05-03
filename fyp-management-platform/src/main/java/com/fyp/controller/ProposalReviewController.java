@@ -1,6 +1,7 @@
 package com.fyp.controller;
 
 import com.fyp.model.ProjectProposal;
+import com.fyp.enums.ProposalStatus;
 import com.fyp.service.ProposalService;
 import com.fyp.util.SessionManager;
 import javafx.application.Platform;
@@ -34,11 +35,15 @@ public class ProposalReviewController implements Initializable {
             protected void updateItem(ProjectProposal item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
+                    // Fix Issue 11 — clear everything on empty cells
                     setText(null);
+                    setGraphic(null);
+                    setStyle(null);
                 } else {
                     setText(item.getTitle());
-                    setGraphic(new Label("[" + item.getStatus().name() + "]"));
-                    setStyle("-fx-text-fill:#F8FAFC; -fx-padding:10; -fx-background-color: transparent; -fx-border-color: #334155; -fx-border-width: 0 0 1 0;");
+                    Label statusBadge = new Label("[" + item.getStatus().name() + "]");
+                    statusBadge.setStyle("-fx-text-fill:#818CF8; -fx-font-size:11;");
+                    setGraphic(statusBadge);
                 }
             }
         });
@@ -56,7 +61,27 @@ public class ProposalReviewController implements Initializable {
                 return proposalService.getProposalsForSupervisor(SessionManager.getJwtToken());
             }
         };
-        t.setOnSucceeded(e -> proposalsList.setItems(FXCollections.observableArrayList(t.getValue())));
+        t.setOnSucceeded(e -> Platform.runLater(() -> {
+            List<ProjectProposal> proposals = t.getValue();
+            proposalsList.setItems(FXCollections.observableArrayList(proposals));
+            // Auto-select if a proposal was passed via SessionManager context
+            Object ctx = SessionManager.getContext("selectedProposalId");
+            if (ctx != null) {
+                String idStr = ctx.toString();
+                proposals.stream()
+                    .filter(p -> p.getProposalId() != null && p.getProposalId().toString().equals(idStr))
+                    .findFirst()
+                    .ifPresent(p -> {
+                        proposalsList.getSelectionModel().select(p);
+                        proposalsList.scrollTo(p);
+                    });
+                SessionManager.clearContext("selectedProposalId");
+            } else if (!proposals.isEmpty()) {
+                // Auto-select the first item if nothing specific was requested
+                proposalsList.getSelectionModel().selectFirst();
+            }
+        }));
+        t.setOnFailed(e -> Platform.runLater(() -> showError("Failed to load proposals.")));
         new Thread(t).start();
     }
 
@@ -82,17 +107,25 @@ public class ProposalReviewController implements Initializable {
         String feedback = feedbackField.getText().trim();
         Task<Boolean> t = new Task<>() {
             @Override protected Boolean call() throws Exception {
-                return proposalService.reviewProposal(selected.getProposalId(), action, feedback, SessionManager.getJwtToken());
+                ProposalStatus status = switch (action) {
+                    case "APPROVED"            -> ProposalStatus.APPROVED;
+                    case "REJECTED"            -> ProposalStatus.REJECTED;
+                    case "REVISION_REQUESTED"  -> ProposalStatus.REVISION_REQUESTED;
+                    default                    -> ProposalStatus.PENDING;
+                };
+                proposalService.reviewProposal(selected.getProposalId(), status, feedback);
+                return true;
             }
         };
         t.setOnSucceeded(e -> Platform.runLater(() -> {
             if (t.getValue()) {
-                showInfo("Proposal " + action.toLowerCase() + " successfully.");
+                showInfo("Proposal " + action.toLowerCase().replace("_", " ") + " successfully.");
                 loadProposals();
             } else {
                 showError("Action failed. Please try again.");
             }
         }));
+        t.setOnFailed(e -> Platform.runLater(() -> showError("Error: " + t.getException().getMessage())));
         new Thread(t).start();
     }
 

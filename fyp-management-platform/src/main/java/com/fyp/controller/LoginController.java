@@ -71,7 +71,12 @@ public class LoginController {
 
     @FXML
     private void handleForgotPassword() {
-        Main.loadView("ForgotPasswordView");
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+            javafx.scene.control.Alert.AlertType.INFORMATION);
+        alert.setTitle("Password Reset");
+        alert.setHeaderText("Password Reset");
+        alert.setContentText("Please contact your administrator or use the OTP verification flow to reset your password.");
+        alert.showAndWait();
     }
 
     @FXML

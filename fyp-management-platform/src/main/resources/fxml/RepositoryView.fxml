@@ -5,7 +5,7 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.RepositoryController"
-      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#F5F5F7;">
 
     <HBox alignment="CENTER_LEFT" spacing="12">
         <Label text="Project Repository" styleClass="page-title" HBox.hgrow="ALWAYS"/>
@@ -32,16 +32,16 @@
             <Label text="Project Details" styleClass="card-title"/>
 
             <Label text="Title:" styleClass="field-label"/>
-            <Label fx:id="projTitle" style="-fx-text-fill:#F8FAFC; -fx-font-size:16; -fx-font-weight:bold; -fx-wrap-text:true;"/>
+            <Label fx:id="projTitle" style="-fx-text-fill:#1D1D1F; -fx-font-size:16; -fx-font-weight:bold; -fx-wrap-text:true;"/>
 
             <Label text="Status:" styleClass="field-label"/>
-            <Label fx:id="projStatus" style="-fx-text-fill:#818CF8; -fx-font-weight:bold;"/>
+            <Label fx:id="projStatus" style="-fx-text-fill:#007AFF; -fx-font-weight:bold;"/>
 
             <Label text="Supervisor:" styleClass="field-label"/>
-            <Label fx:id="projSupervisor" style="-fx-text-fill:#E2E8F0;"/>
+            <Label fx:id="projSupervisor" style="-fx-text-fill:#3A3A3C;"/>
 
             <Label text="Students:" styleClass="field-label"/>
-            <Label fx:id="projStudents" style="-fx-text-fill:#E2E8F0;"/>
+            <Label fx:id="projStudents" style="-fx-text-fill:#3A3A3C;"/>
 
             <Label text="Problem Statement:" styleClass="field-label"/>
             <TextArea fx:id="projProblem" editable="false" styleClass="text-field-dark"

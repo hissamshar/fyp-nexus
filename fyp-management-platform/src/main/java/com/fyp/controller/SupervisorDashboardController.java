@@ -13,6 +13,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
 import java.net.URL;
 import java.util.List;
@@ -22,8 +23,14 @@ public class SupervisorDashboardController implements Initializable {
 
     @FXML private Label userNameLabel, welcomeLabel, pendingLabel, projectsLabel, slotsLabel, meetLabel, notifBadge;
     @FXML private StackPane contentPane;
+    @FXML private VBox dashboardContent;
     @FXML private TableView<ProjectProposal> proposalsTable;
     @FXML private TableColumn<ProjectProposal, String> propTitleCol, propStudentCol, propDateCol, propActionCol;
+
+    // Sidebar buttons for active state tracking
+    @FXML private Button supNavDash, supNavProposals, supNavProjects, supNavMilestones,
+                         supNavFeedback, supNavMeetings, supNavDiscussion, supNavGrading, supNavProfile;
+    private Button activeNavBtn;
 
     private final ProposalService proposalService = new ProposalService();
     private final ProjectService projectService   = new ProjectService();
@@ -37,19 +44,32 @@ public class SupervisorDashboardController implements Initializable {
             userNameLabel.setText(user.getName());
             welcomeLabel.setText("Welcome, " + user.getName().split(" ")[0] + "!");
         }
+        activeNavBtn = supNavDash;
         setupTable();
         loadData();
     }
 
     private void setupTable() {
         propTitleCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getTitle()));
-        propStudentCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getStudentId().toString().substring(0, 8) + "…"));
+        propStudentCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getStudentName()));
         propDateCol.setCellValueFactory(c -> new SimpleStringProperty(
             c.getValue().getSubmissionDate() != null ? c.getValue().getSubmissionDate().toString() : "—"));
         propActionCol.setCellFactory(col -> new TableCell<>() {
             private final Button btn = new Button("Review");
-            { btn.setStyle("-fx-background-color:#6C63FF;-fx-text-fill:white;-fx-cursor:hand;");
-              btn.setOnAction(e -> { loadSubView("ProposalReviewView"); }); }
+            {
+                btn.getStyleClass().add("btn-primary");
+                btn.setStyle("-fx-font-size:12; -fx-padding:5 12;");
+                btn.setOnAction(e -> {
+                    ProjectProposal selected = getTableView().getItems().get(getIndex());
+                    if (selected != null) {
+                        // Bug 3 fix: pass the proposal ID via SessionManager context
+                        SessionManager.setContext("selectedProposalId",
+                            selected.getProposalId().toString());
+                    }
+                    setActive(supNavProposals);
+                    loadSubView("ProposalReviewView");
+                });
+            }
             @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : btn);
@@ -88,22 +108,38 @@ public class SupervisorDashboardController implements Initializable {
         new Thread(task).start();
     }
 
-    @FXML void showDashboard()   { loadData(); }
-    @FXML void showProposals()   { loadSubView("ProposalReviewView"); }
-    @FXML void showProjects()    { loadSubView("MilestoneView"); }
-    @FXML void showMilestones()  { loadSubView("MilestoneView"); }
-    @FXML void showFeedback()    { loadSubView("FeedbackView"); }
-    @FXML void showMeetings()    { loadSubView("MeetingSchedulerView"); }
-    @FXML void showDiscussion()  { loadSubView("DiscussionBoardView"); }
-    @FXML void showGrading()     { loadSubView("GradingView"); }
-    @FXML void showProfile()     { loadSubView("ProfileView"); }
-    @FXML void openNotifications(){ loadSubView("NotificationPanelView"); }
-    @FXML void handleLogout()    { SessionManager.clearSession(); Main.loadView("LoginView"); }
+    // ── Navigation ─────────────────────────────────────────────────────────────
+
+    @FXML void showDashboard()    { 
+        setActive(supNavDash);       
+        contentPane.getChildren().setAll(dashboardContent);
+        loadData(); 
+    }
+    @FXML void showProposals()    { setActive(supNavProposals);  loadSubView("ProposalReviewView"); }
+    @FXML void showProjects()     { setActive(supNavProjects);   loadSubView("MilestoneView"); }
+    @FXML void showMilestones()   { setActive(supNavMilestones); loadSubView("MilestoneView"); }
+    @FXML void showFeedback()     { setActive(supNavFeedback);   loadSubView("ProgressReportView"); }
+    @FXML void showMeetings()     { setActive(supNavMeetings);   loadSubView("MeetingSchedulerView"); }
+    @FXML void showDiscussion()   { setActive(supNavDiscussion); loadSubView("DiscussionBoardView"); }
+    @FXML void showGrading()      { setActive(supNavGrading);   loadSubView("GradingView"); }
+    @FXML void showProfile()      { setActive(supNavProfile);   loadSubView("ProfileView"); }
+    @FXML void openNotifications() { loadSubView("NotificationPanelView"); }
+    @FXML void handleLogout()     { SessionManager.clearSession(); Main.loadView("LoginView"); }
+
+    private void setActive(Button btn) {
+        if (activeNavBtn != null) activeNavBtn.getStyleClass().remove("sidebar-btn-active");
+        if (btn != null) btn.getStyleClass().add("sidebar-btn-active");
+        activeNavBtn = btn;
+    }
 
     private void loadSubView(String name) {
         try {
             Parent v = FXMLLoader.load(getClass().getResource("/fxml/" + name + ".fxml"));
             contentPane.getChildren().setAll(v);
-        } catch (Exception e) { contentPane.getChildren().setAll(new Label(name + " — Loading…")); }
+        } catch (Exception e) {
+            Label lbl = new Label(name + " — Coming Soon");
+            lbl.setStyle("-fx-text-fill:#9090C0; -fx-font-size:18;");
+            contentPane.getChildren().setAll(lbl);
+        }
     }
 }

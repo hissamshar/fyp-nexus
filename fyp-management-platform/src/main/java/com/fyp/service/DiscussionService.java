@@ -1,6 +1,7 @@
 package com.fyp.service;
 
 import com.fyp.dao.DiscussionDAO;
+import com.fyp.dao.ProjectDAO;
 import com.fyp.model.*;
 import com.fyp.util.SessionManager;
 
@@ -11,6 +12,7 @@ import java.util.UUID;
 public class DiscussionService {
 
     private final DiscussionDAO discussionDAO = new DiscussionDAO();
+    private final ProjectDAO projectDAO = new ProjectDAO();
 
     private String jwt() { return SessionManager.getJwtToken(); }
 
@@ -63,14 +65,22 @@ public class DiscussionService {
         discussionDAO.softDeletePost(postId, jwt());
     }
 
-    // ── Adapter Methods ────────────────────────────────────────────────────────
+    // ── Adapter Methods ─────────────────────────────────────────────────────────
+
+    /**
+     * Gets all threads for the current user's active project.
+     * Resolves project → board → threads.
+     */
     public List<DiscussionThread> getThreadsForCurrentProject(String token) {
         try {
-            // In a real app we'd fetch the project ID for the current user.
-            // Using a dummy/default board ID for the sake of the controller compilation.
-            // A more robust implementation would look up the Project ID first.
+            User user = SessionManager.getCurrentUser();
+            Optional<UUID> boardId = resolveBoardId(user, token);
+            if (boardId.isEmpty()) return List.of();
+            return discussionDAO.findThreadsByBoardId(boardId.get(), token);
+        } catch (Exception e) {
+            e.printStackTrace();
             return List.of();
-        } catch (Exception e) { e.printStackTrace(); return List.of(); }
+        }
     }
 
     public List<Post> getPostsForThread(UUID threadId, String token) {
@@ -81,18 +91,70 @@ public class DiscussionService {
     public Post addPostUI(UUID threadId, String content, String token) {
         try {
             UUID id = addPost(threadId, content, null);
-            Post p = new Post(); p.setPostId(id); p.setContent(content); p.setThreadId(threadId);
+            Post p = new Post();
+            p.setPostId(id);
+            p.setContent(content);
+            p.setThreadId(threadId);
+            p.setAuthorId(SessionManager.getCurrentUser().getUserId());
             return p;
-        } catch (Exception e) { e.printStackTrace(); return null; }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
+    /**
+     * Creates a new thread in the current user's active project board.
+     * Resolves project → board, then inserts the thread.
+     */
     public DiscussionThread createThread(String title, String token) {
         try {
-            // Again, board ID needs lookup
-            UUID boardId = UUID.randomUUID();
+            User user = SessionManager.getCurrentUser();
+            Optional<UUID> boardIdOpt = resolveBoardId(user, token);
+            UUID boardId;
+            if (boardIdOpt.isPresent()) {
+                boardId = boardIdOpt.get();
+            } else {
+                // No board yet — try to create one from the user's project
+                Optional<UUID> projectId = resolveProjectId(user, token);
+                if (projectId.isEmpty()) return null;
+                boardId = discussionDAO.insertBoard(projectId.get(), false, token);
+            }
             UUID id = createThread(boardId, title);
-            DiscussionThread t = new DiscussionThread(); t.setThreadId(id); t.setTitle(title);
+            DiscussionThread t = new DiscussionThread();
+            t.setThreadId(id);
+            t.setTitle(title);
+            t.setBoardId(boardId);
             return t;
-        } catch (Exception e) { e.printStackTrace(); return null; }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────────
+
+    private Optional<UUID> resolveProjectId(User user, String token) {
+        try {
+            Optional<com.fyp.model.Project> project =
+                projectDAO.findByStudentUserId(user.getUserId(), token);
+            return project.map(com.fyp.model.Project::getProjectId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
+    private Optional<UUID> resolveBoardId(User user, String token) {
+        try {
+            Optional<UUID> projectId = resolveProjectId(user, token);
+            if (projectId.isEmpty()) return Optional.empty();
+            Optional<DiscussionBoard> board =
+                discussionDAO.findBoardByProjectId(projectId.get(), token);
+            return board.map(DiscussionBoard::getBoardId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
     }
 }

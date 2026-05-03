@@ -5,12 +5,12 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.ProposalReviewController"
-      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#F5F5F7;">
 
     <Label text="Review Proposals" styleClass="page-title"/>
 
     <HBox spacing="12" alignment="CENTER_LEFT">
-        <Label text="Filter:" style="-fx-text-fill:#94A3B8;"/>
+        <Label text="Filter:" style="-fx-text-fill:#86868B;"/>
         <ComboBox fx:id="statusFilter" promptText="All Statuses" styleClass="combo-dark" id="statusFilter"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="🔄 Refresh" styleClass="btn-outline-small" onAction="#handleRefresh" id="refreshBtn"/>
@@ -20,18 +20,17 @@
         <!-- Proposals list -->
         <VBox styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS" prefWidth="400">
             <Label text="Pending Proposals" styleClass="card-title"/>
-            <ListView fx:id="proposalsList" prefHeight="400" id="proposalsList"
-                      style="-fx-background-color:transparent; -fx-border-color:#334155; -fx-border-radius:6;"/>
+            <ListView fx:id="proposalsList" prefHeight="400" id="proposalsList" styleClass="dark-list"/>
         </VBox>
 
         <!-- Proposal detail -->
         <VBox fx:id="detailPane" styleClass="content-card" spacing="12" HBox.hgrow="ALWAYS">
             <Label text="Proposal Details" styleClass="card-title"/>
             <Label text="Title:" styleClass="field-label"/>
-            <Label fx:id="detailTitle" style="-fx-text-fill:#F8FAFC; -fx-font-size:16; -fx-font-weight:bold;"/>
+            <Label fx:id="detailTitle" style="-fx-text-fill:#1D1D1F; -fx-font-size:16; -fx-font-weight:bold;"/>
 
             <Label text="Student:" styleClass="field-label"/>
-            <Label fx:id="detailStudent" style="-fx-text-fill:#E2E8F0;"/>
+            <Label fx:id="detailStudent" style="-fx-text-fill:#3A3A3C;"/>
 
             <Label text="Problem Statement:" styleClass="field-label"/>
             <TextArea fx:id="detailProblem" editable="false" styleClass="text-field-dark"
@@ -45,14 +44,12 @@
             <TextArea fx:id="feedbackField" promptText="Write your feedback here..." styleClass="text-field-dark"
                       prefHeight="80" wrapText="true" id="feedbackField"/>
 
-            <Label fx:id="statusLabel" style="-fx-text-fill:#818CF8; -fx-font-weight:bold;"/>
+            <Label fx:id="statusLabel" style="-fx-text-fill:#007AFF; -fx-font-weight:bold;"/>
             <Label fx:id="errorLabel" styleClass="error-label" visible="false" managed="false"/>
 
             <HBox spacing="12">
-                <Button text="✅ Approve" styleClass="btn-primary" onAction="#handleApprove" id="approveBtn"
-                        style="-fx-background-color:linear-gradient(to right,#059669,#10B981);"/>
-                <Button text="❌ Reject"  styleClass="btn-primary" onAction="#handleReject"  id="rejectBtn"
-                        style="-fx-background-color:linear-gradient(to right,#DC2626,#EF4444);"/>
+                <Button text="✅ Approve" styleClass="btn-success" onAction="#handleApprove" id="approveBtn"/>
+                <Button text="❌ Reject"  styleClass="btn-danger" onAction="#handleReject"  id="rejectBtn"/>
                 <Button text="↩ Revise"  styleClass="btn-outline-small" onAction="#handleRevise" id="reviseBtn"/>
             </HBox>
         </VBox>

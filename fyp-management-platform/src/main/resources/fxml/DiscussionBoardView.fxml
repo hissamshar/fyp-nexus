@@ -5,7 +5,7 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.DiscussionBoardController"
-      styleClass="dashboard-content" spacing="16" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="16" style="-fx-background-color:#F5F5F7;">
 
     <Label text="Discussion Board" styleClass="page-title"/>
 
@@ -17,7 +17,7 @@
                 <Button text="+" styleClass="btn-outline-small" onAction="#handleNewThread" id="newThreadBtn"/>
             </HBox>
             <ListView fx:id="threadList" VBox.vgrow="ALWAYS" prefHeight="480" id="threadList"
-                      style="-fx-background-color:#0F172A; -fx-border-color:#334155; -fx-border-radius:6;"/>
+                      style="-fx-background-color:#FBFBFD; -fx-border-color:#E8E8ED; -fx-border-radius:8;"/>
         </VBox>
 
         <!-- Posts panel -->
@@ -29,7 +29,7 @@
             </ScrollPane>
 
             <!-- Reply box -->
-            <Separator style="-fx-background-color:#334155;"/>
+            <Separator style="-fx-background-color:#E8E8ED;"/>
             <HBox spacing="8" alignment="CENTER_LEFT">
                 <TextArea fx:id="replyField" promptText="Write a reply..." styleClass="text-field-dark"
                           prefHeight="70" HBox.hgrow="ALWAYS" wrapText="true" id="replyField"/>

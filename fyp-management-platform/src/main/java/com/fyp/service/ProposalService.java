@@ -104,36 +104,34 @@ public class ProposalService {
 
         proposalDAO.updateStatus(proposalId, decision, comment, jwt());
 
-        proposalDAO.findById(proposalId, jwt()).ifPresent(proposal -> {
-            try {
-                if (decision == ProposalStatus.APPROVED) {
-                    UUID projectId = projectDAO.insert(proposalId, jwt());
-                    discussionDAO.insertBoard(projectId, false, jwt());
+        var proposalOpt = proposalDAO.findById(proposalId, jwt());
+        if (proposalOpt.isPresent()) {
+            ProjectProposal proposal = proposalOpt.get();
+            if (decision == ProposalStatus.APPROVED) {
+                UUID projectId = projectDAO.insert(proposalId, jwt());
+                discussionDAO.insertBoard(projectId, false, jwt());
 
-                    StudentDAO sDAO = new StudentDAO();
-                    sDAO.findByStudentId(proposal.getStudentId(), jwt()).ifPresent(student -> {
-                        try {
-                            notifService.create(student.getUserId(), NotificationType.PROPOSAL,
-                                "Your proposal \"" + proposal.getTitle() + "\" was APPROVED. Project created!",
-                                student.getEmail());
-                        } catch (Exception ignored) {}
-                    });
-                } else if (decision == ProposalStatus.REJECTED) {
-                    StudentDAO sDAO = new StudentDAO();
-                    sDAO.findByStudentId(proposal.getStudentId(), jwt()).ifPresent(student -> {
-                        try {
-                            notifService.create(student.getUserId(), NotificationType.PROPOSAL,
-                                "Your proposal \"" + proposal.getTitle() + "\" was REJECTED. Reason: " + comment,
-                                student.getEmail());
-                        } catch (Exception ignored) {}
-                    });
-                }
-                AuditLogger.log(current.getUserId(), "PROPOSAL_REVIEW",
-                    "Proposal " + proposalId + " => " + decision.name());
-            } catch (Exception e) {
-                System.err.println("[ProposalService] Error in reviewProposal: " + e.getMessage());
+                StudentDAO sDAO = new StudentDAO();
+                sDAO.findByStudentId(proposal.getStudentId(), jwt()).ifPresent(student -> {
+                    try {
+                        notifService.create(student.getUserId(), NotificationType.PROPOSAL,
+                            "Your proposal \"" + proposal.getTitle() + "\" was APPROVED. Project created!",
+                            student.getEmail());
+                    } catch (Exception ignored) {}
+                });
+            } else if (decision == ProposalStatus.REJECTED) {
+                StudentDAO sDAO = new StudentDAO();
+                sDAO.findByStudentId(proposal.getStudentId(), jwt()).ifPresent(student -> {
+                    try {
+                        notifService.create(student.getUserId(), NotificationType.PROPOSAL,
+                            "Your proposal \"" + proposal.getTitle() + "\" was REJECTED. Reason: " + comment,
+                            student.getEmail());
+                    } catch (Exception ignored) {}
+                });
             }
-        });
+            AuditLogger.log(current.getUserId(), "PROPOSAL_REVIEW",
+                "Proposal " + proposalId + " => " + decision.name());
+        }
     }
 
     public List<ProjectProposal> getProposalsForCurrentUser() throws Exception {
@@ -200,23 +198,18 @@ public class ProposalService {
     }
 
     /** String-based review action for ProposalReviewController. */
-    public boolean reviewProposal(UUID proposalId, String action, String feedback, String token) {
-        try {
-            ProposalStatus status = switch (action) {
-                case "APPROVED"            -> ProposalStatus.APPROVED;
-                case "REJECTED"            -> ProposalStatus.REJECTED;
-                case "REVISION_REQUESTED"  -> ProposalStatus.REVISION_REQUESTED;
-                default                    -> ProposalStatus.PENDING;
-            };
-            proposalDAO.updateStatus(proposalId, status, feedback, token);
-            if (status == ProposalStatus.APPROVED) {
-                projectDAO.insert(proposalId, token);
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+    public boolean reviewProposal(UUID proposalId, String action, String feedback, String token) throws Exception {
+        ProposalStatus status = switch (action) {
+            case "APPROVED"            -> ProposalStatus.APPROVED;
+            case "REJECTED"            -> ProposalStatus.REJECTED;
+            case "REVISION_REQUESTED"  -> ProposalStatus.REVISION_REQUESTED;
+            default                    -> ProposalStatus.PENDING;
+        };
+        proposalDAO.updateStatus(proposalId, status, feedback, token);
+        if (status == ProposalStatus.APPROVED) {
+            projectDAO.insert(proposalId, token);
         }
+        return true;
     }
 
     private boolean isBlank(String s) { return s == null || s.isBlank(); }

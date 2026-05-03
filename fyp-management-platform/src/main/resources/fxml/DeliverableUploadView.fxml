@@ -5,7 +5,7 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.fyp.controller.DeliverableUploadController"
-      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#0F172A;">
+      styleClass="dashboard-content" spacing="20" style="-fx-background-color:#F5F5F7;">
 
     <Label text="Deliverables" styleClass="page-title"/>
 
@@ -29,7 +29,7 @@
 
         <HBox spacing="12" alignment="CENTER_LEFT">
             <Label fx:id="selectedFileLabel" text="No file selected"
-                   style="-fx-text-fill:#94A3B8; -fx-font-size:13;"/>
+                   style="-fx-text-fill:#86868B; -fx-font-size:13;"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="📁  Choose File" styleClass="btn-outline-small" onAction="#handleChooseFile" id="chooseFileBtn"/>
         </HBox>

@@ -96,6 +96,36 @@ public class ProjectDAO {
         return list;
     }
 
+    /**
+     * Finds the active/approved project for a given user ID (student).
+     * Joins through project_proposals -> students -> users.
+     */
+    public Optional<Project> findByStudentUserId(UUID userId, String jwt) throws Exception {
+        // Get student record by user_id
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl() + "/rest/v1/students?user_id=eq." + userId + "&select=student_id"))
+                .GET();
+        HttpResponse<String> res = SupabaseClient.sendAuthenticatedRequest(req, jwt);
+        if (res.statusCode() != 200 || res.body().equals("[]")) return Optional.empty();
+
+        JsonArray students = JsonParser.parseString(res.body()).getAsJsonArray();
+        UUID studentId = UUID.fromString(students.get(0).getAsJsonObject().get("student_id").getAsString());
+
+        // Find approved proposal for that student
+        HttpRequest.Builder req2 = HttpRequest.newBuilder()
+                .uri(URI.create(SupabaseClient.getBaseUrl()
+                        + "/rest/v1/project_proposals?student_id=eq." + studentId
+                        + "&status=eq.APPROVED&select=proposal_id&order=created_at.desc&limit=1"))
+                .GET();
+        HttpResponse<String> res2 = SupabaseClient.sendAuthenticatedRequest(req2, jwt);
+        if (res2.statusCode() != 200 || res2.body().equals("[]")) return Optional.empty();
+
+        JsonArray proposals = JsonParser.parseString(res2.body()).getAsJsonArray();
+        UUID proposalId = UUID.fromString(proposals.get(0).getAsJsonObject().get("proposal_id").getAsString());
+
+        return findByProposalId(proposalId, jwt);
+    }
+
     public UUID insert(UUID proposalId, String jwt) throws Exception {
         JsonObject json = new JsonObject();
         json.addProperty("proposal_id", proposalId.toString());
