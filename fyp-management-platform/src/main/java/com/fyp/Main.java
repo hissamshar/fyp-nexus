@@ -15,9 +15,16 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         primaryStage = stage;
-        stage.setTitle("FYP Management Platform — FAST NUCES Peshawar");
+        stage.setTitle("FYP Nexus — FAST NUCES Peshawar");
         stage.setMinWidth(1100);
         stage.setMinHeight(700);
+
+        // Set macOS-style app icon
+        try {
+            stage.getIcons().add(new Image(Main.class.getResourceAsStream("/images/app-icon.png")));
+        } catch (Exception e) {
+            System.err.println("[Main] App icon not found, skipping.");
+        }
 
         loadView("LoginView");
 

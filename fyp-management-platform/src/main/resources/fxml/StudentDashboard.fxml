@@ -10,7 +10,7 @@
     <!-- TOP BAR -->
     <top>
         <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
-            <Label text="FYP Platform" styleClass="top-bar-logo"/>
+            <Label text="FYP Nexus" styleClass="top-bar-logo"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="userNameLabel" styleClass="top-bar-user"/>
             <Button fx:id="notifBtn" styleClass="notif-btn" onAction="#openNotifications" id="notifBellBtn">

@@ -11,7 +11,7 @@
             <Label text="Verify Your Email" styleClass="login-logo"/>
             <Label fx:id="instructionLabel" text="Enter the 6-digit code sent to your email."
                    styleClass="login-subtitle" wrapText="true" textAlignment="CENTER"/>
-            <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="360"/>
+            <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="360" visible="false" managed="false"/>
 
             <TextField fx:id="otpField" promptText="000000" styleClass="text-field-dark otp-field"
                        maxWidth="200" id="otpInputField"/>

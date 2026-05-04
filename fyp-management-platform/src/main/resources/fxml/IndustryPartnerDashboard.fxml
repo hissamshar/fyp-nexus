@@ -7,7 +7,7 @@
             styleClass="root-pane" prefWidth="1200" prefHeight="750">
     <top>
         <HBox styleClass="top-bar" alignment="CENTER_LEFT">
-            <Label text="FYP Platform - Industry Partner" styleClass="top-bar-logo"/>
+            <Label text="FYP Nexus" styleClass="top-bar-logo"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="userNameLabel" styleClass="top-bar-user"/>
             <Button text="Logout" styleClass="btn-outline-small" onAction="#handleLogout" id="indLogoutBtn"/>

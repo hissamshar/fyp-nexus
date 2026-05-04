@@ -12,9 +12,9 @@
             <VBox alignment="CENTER" spacing="0">
                 <VBox styleClass="login-card" alignment="CENTER" spacing="16" maxWidth="500">
                     <Label text="Create Account" styleClass="login-logo"/>
-                    <Label text="FYP Management Platform" styleClass="login-subtitle"/>
+                    <Label text="FYP Nexus" styleClass="login-subtitle"/>
 
-                    <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="420"/>
+                    <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="420" visible="false" managed="false"/>
 
                     <GridPane hgap="12" vgap="12" maxWidth="420">
                         <columnConstraints>

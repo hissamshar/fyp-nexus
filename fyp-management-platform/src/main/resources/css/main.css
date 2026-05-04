@@ -1,302 +1,282 @@
 /*
- * FYP Management Platform
- * macOS / Apple-Inspired Light Theme
- * Clean, minimal, premium aesthetic
+ * FYP Management Platform — macOS Aqua / Liquid Glass Theme
+ * Authentic Apple HIG-inspired design with vibrancy, depth, and polish
  */
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   DESIGN TOKENS (Apple HIG)
-   ─────────────────────────────────────────────────────────────────────────
-   Background:     #F5F5F7  (Apple system gray 6)
-   Surface:        #FFFFFF
-   Surface Alt:    #FBFBFD
-   Border:         #D2D2D7  (Apple separator)
-   Border Light:   #E8E8ED
-   Text Primary:   #1D1D1F
-   Text Secondary: #86868B
-   Text Tertiary:  #AEAEB2
-   Accent Blue:    #007AFF
-   Accent Green:   #34C759
-   Accent Red:     #FF3B30
-   Accent Orange:  #FF9500
-   Accent Purple:  #AF52DE
-   Accent Teal:    #5AC8FA
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ ROOT & TOKENS ═══ */
 .root-pane {
     -fx-background-color: #F5F5F7;
     -fx-font-family: 'Inter', 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', system, sans-serif;
+    -fx-font-smoothing-type: gray;
 }
 
-/* ── Login & Registration ────────────────────────────────────────────────── */
+/* ═══ LOGIN & REGISTRATION ═══ */
 .login-bg {
-    -fx-background-color: linear-gradient(to bottom right, #F5F5F7, #E8E8ED);
+    -fx-background-color: linear-gradient(to bottom right, #E8EDF3, #F5F5F7, #EDE7F6);
 }
-
 .login-card {
-    -fx-background-color: #FFFFFF;
-    -fx-background-radius: 14;
-    -fx-border-color: #D2D2D7;
-    -fx-border-radius: 14;
+    -fx-background-color: rgba(255,255,255,0.92);
+    -fx-background-radius: 18;
+    -fx-border-color: rgba(210,210,215,0.6);
+    -fx-border-radius: 18;
     -fx-border-width: 0.5;
-    -fx-padding: 44 44 44 44;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 24, 0, 0, 8);
+    -fx-padding: 48 48 44 48;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 40, 0, 0, 12),
+                dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 3);
 }
-
 .login-logo {
-    -fx-font-size: 34px;
+    -fx-font-size: 36px;
     -fx-font-weight: bold;
     -fx-text-fill: #1D1D1F;
 }
-
 .login-subtitle {
     -fx-font-size: 17px;
     -fx-font-weight: 600;
-    -fx-text-fill: #1D1D1F;
+    -fx-text-fill: #3A3A3C;
 }
-
 .login-university {
     -fx-font-size: 13px;
     -fx-text-fill: #86868B;
 }
 
-/* ── Typography & Labels ─────────────────────────────────────────────────── */
+/* ═══ TYPOGRAPHY ═══ */
 .field-label {
     -fx-font-size: 13px;
     -fx-font-weight: 600;
     -fx-text-fill: #86868B;
 }
-
 .error-label {
     -fx-text-fill: #FF3B30;
     -fx-font-size: 13px;
-    -fx-background-color: rgba(255, 59, 48, 0.06);
+    -fx-background-color: rgba(255,59,48,0.06);
     -fx-padding: 10 14;
     -fx-background-radius: 8;
 }
-
 .page-title {
     -fx-font-size: 28px;
     -fx-font-weight: bold;
     -fx-text-fill: #1D1D1F;
 }
-
 .card-title {
     -fx-font-size: 15px;
     -fx-font-weight: 600;
     -fx-text-fill: #1D1D1F;
 }
 
-/* ── Inputs ──────────────────────────────────────────────────────────────── */
+/* ═══ INPUTS ═══ */
 .text-field-dark, .combo-dark, .check-dark {
-    -fx-background-color: #F5F5F7;
+    -fx-background-color: #FFFFFF;
     -fx-text-fill: #1D1D1F;
     -fx-prompt-text-fill: #AEAEB2;
-    -fx-border-color: #D2D2D7;
+    -fx-border-color: rgba(0,0,0,0.12);
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-padding: 10 14;
     -fx-font-size: 14px;
 }
-
-/* Fix for TextArea content visibility */
 .text-field-dark .content {
-    -fx-background-color: #F5F5F7;
-}
-
-.text-field-dark:focused, .combo-dark:focused {
-    -fx-border-color: #007AFF;
     -fx-background-color: #FFFFFF;
-    -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.15), 8, 0, 0, 0);
 }
-
+.text-field-dark:focused, .combo-dark:focused {
+    -fx-border-color: rgba(0,122,255,0.6);
+    -fx-background-color: #FFFFFF;
+    -fx-effect: dropshadow(gaussian, rgba(0,122,255,0.25), 10, 0, 0, 0),
+                dropshadow(gaussian, rgba(0,122,255,0.12), 4, 0, 0, 0);
+}
 .text-field-dark:focused .content {
     -fx-background-color: #FFFFFF;
 }
-
 .field-error {
     -fx-border-color: #FF3B30;
 }
-
-/* ── ComboBox Popup ─────────────────────────────────────────────────────── */
-.combo-dark .list-view {
-    -fx-background-color: #FFFFFF;
+.otp-field {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
 }
 
+/* ═══ COMBOBOX POPUP ═══ */
+.combo-dark .list-view {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 10;
+}
 .combo-dark .list-cell {
     -fx-background-color: #FFFFFF;
     -fx-text-fill: #1D1D1F;
     -fx-padding: 8 14;
 }
-
 .combo-dark .list-cell:hover {
-    -fx-background-color: rgba(0, 122, 255, 0.06);
+    -fx-background-color: rgba(0,122,255,0.08);
 }
-
 .combo-dark .list-cell:selected {
     -fx-background-color: #007AFF;
     -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 6;
 }
 
-/* ── CheckBox (Apple style) ─────────────────────────────────────────────── */
+/* ═══ CHECKBOX (Aqua) ═══ */
 .check-dark {
     -fx-text-fill: #1D1D1F;
     -fx-border-color: transparent;
     -fx-background-color: transparent;
 }
-
 .check-dark .box {
     -fx-background-color: #FFFFFF;
-    -fx-border-color: #D2D2D7;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
+    -fx-border-color: rgba(0,0,0,0.2);
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
     -fx-padding: 3;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 2, 0, 0, 1);
 }
-
 .check-dark:selected .box {
-    -fx-background-color: #007AFF;
-    -fx-border-color: #007AFF;
+    -fx-background-color: linear-gradient(to bottom, #3A8FFF, #0062CC);
+    -fx-border-color: #005ABB;
 }
-
 .check-dark:selected .mark {
     -fx-background-color: #FFFFFF;
 }
 
-/* ── Buttons ─────────────────────────────────────────────────────────────── */
+/* ═══ BUTTONS — AQUA STYLE ═══ */
 .btn-primary {
-    -fx-background-color: #007AFF;
+    -fx-background-color: linear-gradient(to bottom, #3A8FFF, #0066D6);
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-font-weight: 600;
     -fx-background-radius: 10;
     -fx-padding: 10 24;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.2), 6, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(0,102,214,0.3), 8, 0, 0, 2),
+                innershadow(gaussian, rgba(255,255,255,0.15), 1, 0, 0, 1);
 }
-
 .btn-primary:hover {
-    -fx-background-color: #0066D6;
-    -fx-effect: dropshadow(gaussian, rgba(0, 122, 255, 0.3), 10, 0, 0, 3);
+    -fx-background-color: linear-gradient(to bottom, #4A9AFF, #0070E8);
+    -fx-effect: dropshadow(gaussian, rgba(0,102,214,0.4), 12, 0, 0, 3),
+                innershadow(gaussian, rgba(255,255,255,0.2), 1, 0, 0, 1);
 }
-
 .btn-primary:pressed {
-    -fx-background-color: #004EA2;
+    -fx-background-color: linear-gradient(to bottom, #004EA2, #003D82);
+    -fx-effect: innershadow(gaussian, rgba(0,0,0,0.25), 6, 0, 0, 2);
+}
+.btn-primary:focused {
+    -fx-effect: dropshadow(gaussian, rgba(0,122,255,0.5), 12, 0, 0, 0),
+                dropshadow(gaussian, rgba(0,102,214,0.3), 8, 0, 0, 2);
 }
 
 .btn-success {
-    -fx-background-color: #34C759;
+    -fx-background-color: linear-gradient(to bottom, #4CD964, #2DB84E);
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-font-weight: 600;
     -fx-background-radius: 10;
     -fx-padding: 10 24;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(52, 199, 89, 0.2), 6, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(45,184,78,0.3), 8, 0, 0, 2);
 }
-
 .btn-success:hover {
-    -fx-background-color: #2DB84E;
-    -fx-effect: dropshadow(gaussian, rgba(52, 199, 89, 0.3), 10, 0, 0, 3);
+    -fx-background-color: linear-gradient(to bottom, #5CE06E, #34C759);
+    -fx-effect: dropshadow(gaussian, rgba(45,184,78,0.4), 12, 0, 0, 3);
+}
+.btn-success:pressed {
+    -fx-background-color: linear-gradient(to bottom, #248A3D, #1E7A34);
+    -fx-effect: innershadow(gaussian, rgba(0,0,0,0.2), 6, 0, 0, 2);
 }
 
 .btn-danger {
-    -fx-background-color: #FF3B30;
+    -fx-background-color: linear-gradient(to bottom, #FF5E57, #E0332A);
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-font-weight: 600;
     -fx-background-radius: 10;
     -fx-padding: 10 24;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(255, 59, 48, 0.2), 6, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(224,51,42,0.3), 8, 0, 0, 2);
 }
-
 .btn-danger:hover {
-    -fx-background-color: #E0332A;
-    -fx-effect: dropshadow(gaussian, rgba(255, 59, 48, 0.3), 10, 0, 0, 3);
+    -fx-background-color: linear-gradient(to bottom, #FF6F69, #FF3B30);
+    -fx-effect: dropshadow(gaussian, rgba(224,51,42,0.4), 12, 0, 0, 3);
+}
+.btn-danger:pressed {
+    -fx-background-color: linear-gradient(to bottom, #C62828, #B71C1C);
+    -fx-effect: innershadow(gaussian, rgba(0,0,0,0.2), 6, 0, 0, 2);
 }
 
 .btn-outline-small {
-    -fx-background-color: transparent;
-    -fx-border-color: #D2D2D7;
+    -fx-background-color: rgba(255,255,255,0.8);
+    -fx-border-color: rgba(0,0,0,0.12);
     -fx-border-radius: 8;
     -fx-background-radius: 8;
-    -fx-text-fill: #1D1D1F;
+    -fx-text-fill: #3A3A3C;
     -fx-font-size: 12px;
     -fx-font-weight: 500;
     -fx-padding: 6 14;
     -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 2, 0, 0, 1);
 }
-
 .btn-outline-small:hover {
-    -fx-background-color: #F5F5F7;
-    -fx-border-color: #AEAEB2;
+    -fx-background-color: rgba(0,0,0,0.04);
+    -fx-border-color: rgba(0,0,0,0.18);
+}
+.btn-outline-small:pressed {
+    -fx-background-color: rgba(0,0,0,0.08);
+    -fx-effect: innershadow(gaussian, rgba(0,0,0,0.1), 3, 0, 0, 1);
 }
 
-/* ── Links ───────────────────────────────────────────────────────────────── */
+/* ═══ LINKS ═══ */
 .link-text {
     -fx-text-fill: #007AFF;
     -fx-font-size: 13px;
     -fx-underline: false;
 }
-
 .link-text:hover {
     -fx-text-fill: #0066D6;
     -fx-underline: true;
 }
 
-/* ── Separator ───────────────────────────────────────────────────────────── */
+/* ═══ SEPARATOR ═══ */
 .card-separator {
     -fx-background-color: transparent;
 }
 .card-separator .line {
-    -fx-border-color: #E8E8ED;
+    -fx-border-color: rgba(0,0,0,0.08);
     -fx-border-width: 0.5 0 0 0;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   DASHBOARD LAYOUT
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Top Bar (macOS toolbar) ────────────────────────────────────────────── */
+/* ═══ TOP BAR (Unified Toolbar/Titlebar with Vibrancy) ═══ */
 .top-bar {
-    -fx-background-color: rgba(255, 255, 255, 0.85);
+    -fx-background-color: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(245,245,247,0.88));
     -fx-border-width: 0 0 0.5 0;
-    -fx-border-color: #D2D2D7;
+    -fx-border-color: rgba(0,0,0,0.12);
     -fx-padding: 10 24;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 4, 0, 0, 1);
 }
-
 .top-bar-logo {
     -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-text-fill: #1D1D1F;
 }
-
 .top-bar-user {
-    -fx-text-fill: #1D1D1F;
+    -fx-text-fill: #3A3A3C;
     -fx-font-size: 13px;
     -fx-font-weight: 500;
     -fx-padding: 0 8 0 0;
 }
 
-/* ── Sidebar (macOS source list) ────────────────────────────────────────── */
+/* ═══ SIDEBAR (macOS Source List with Vibrancy) ═══ */
 .sidebar {
-    -fx-background-color: #F5F5F7;
+    -fx-background-color: linear-gradient(to bottom, rgba(242,242,247,0.75), rgba(235,235,240,0.72));
     -fx-border-width: 0 0.5 0 0;
-    -fx-border-color: #D2D2D7;
-    -fx-padding: 20 12;
+    -fx-border-color: rgba(0,0,0,0.1);
+    -fx-padding: 20 10;
 }
-
 .sidebar-section-label {
     -fx-text-fill: #86868B;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
-    -fx-padding: 0 0 6 10;
-    -fx-text-transform: uppercase;
+    -fx-padding: 8 0 6 12;
 }
-
 .sidebar-btn {
     -fx-background-color: transparent;
-    -fx-text-fill: #1D1D1F;
+    -fx-text-fill: #3A3A3C;
     -fx-font-size: 13px;
     -fx-font-weight: 400;
     -fx-alignment: center-left;
@@ -305,239 +285,203 @@
     -fx-cursor: hand;
     -fx-pref-width: 1000px;
 }
-
 .sidebar-btn:hover {
-    -fx-background-color: rgba(0, 0, 0, 0.04);
+    -fx-background-color: rgba(0,0,0,0.05);
     -fx-text-fill: #1D1D1F;
 }
-
 .sidebar-btn-active {
-    -fx-background-color: rgba(0, 122, 255, 0.1);
+    -fx-background-color: rgba(0,122,255,0.12);
     -fx-text-fill: #007AFF;
     -fx-font-weight: 600;
+    -fx-effect: innershadow(gaussian, rgba(0,122,255,0.06), 4, 0, 0, 0);
 }
 
-/* ── Content Area ───────────────────────────────────────────────────────── */
+/* ═══ CONTENT AREA ═══ */
 .content-pane {
     -fx-background-color: #F5F5F7;
 }
-
 .dashboard-content {
     -fx-padding: 28;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   CARDS & STAT CARDS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ CARDS ═══ */
 .stat-card {
     -fx-background-color: #FFFFFF;
-    -fx-background-radius: 12;
-    -fx-border-color: #E8E8ED;
-    -fx-border-radius: 12;
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(0,0,0,0.06);
+    -fx-border-radius: 14;
     -fx-border-width: 0.5;
     -fx-padding: 20;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.04), 8, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 16, 0, 0, 4),
+                dropshadow(gaussian, rgba(0,0,0,0.03), 4, 0, 0, 1);
 }
-
-/* Colored left-accent strips instead of bottom borders */
 .stat-card-purple {
-    -fx-border-color: #E8E8ED #E8E8ED #E8E8ED #AF52DE;
+    -fx-border-color: rgba(0,0,0,0.06) rgba(0,0,0,0.06) rgba(0,0,0,0.06) #AF52DE;
     -fx-border-width: 0.5 0.5 0.5 3;
+    -fx-background-color: linear-gradient(to right, rgba(175,82,222,0.03), #FFFFFF);
 }
 .stat-card-blue {
-    -fx-border-color: #E8E8ED #E8E8ED #E8E8ED #007AFF;
+    -fx-border-color: rgba(0,0,0,0.06) rgba(0,0,0,0.06) rgba(0,0,0,0.06) #007AFF;
     -fx-border-width: 0.5 0.5 0.5 3;
+    -fx-background-color: linear-gradient(to right, rgba(0,122,255,0.03), #FFFFFF);
 }
 .stat-card-teal {
-    -fx-border-color: #E8E8ED #E8E8ED #E8E8ED #5AC8FA;
+    -fx-border-color: rgba(0,0,0,0.06) rgba(0,0,0,0.06) rgba(0,0,0,0.06) #5AC8FA;
     -fx-border-width: 0.5 0.5 0.5 3;
+    -fx-background-color: linear-gradient(to right, rgba(90,200,250,0.04), #FFFFFF);
 }
 .stat-card-orange {
-    -fx-border-color: #E8E8ED #E8E8ED #E8E8ED #FF9500;
+    -fx-border-color: rgba(0,0,0,0.06) rgba(0,0,0,0.06) rgba(0,0,0,0.06) #FF9500;
     -fx-border-width: 0.5 0.5 0.5 3;
+    -fx-background-color: linear-gradient(to right, rgba(255,149,0,0.04), #FFFFFF);
 }
-
 .stat-label {
     -fx-text-fill: #86868B;
     -fx-font-size: 12px;
-    -fx-font-weight: 500;
+    -fx-font-weight: 600;
 }
-
 .stat-value {
     -fx-text-fill: #1D1D1F;
-    -fx-font-size: 32px;
+    -fx-font-size: 34px;
     -fx-font-weight: bold;
 }
-
 .content-card {
     -fx-background-color: #FFFFFF;
-    -fx-background-radius: 12;
-    -fx-border-color: #E8E8ED;
-    -fx-border-radius: 12;
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(0,0,0,0.06);
+    -fx-border-radius: 14;
     -fx-border-width: 0.5;
-    -fx-padding: 20;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.04), 8, 0, 0, 2);
+    -fx-padding: 22;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 16, 0, 0, 4),
+                dropshadow(gaussian, rgba(0,0,0,0.03), 4, 0, 0, 1);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   TABLES (macOS list style)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ TABLES (macOS List Style) ═══ */
 .dark-table {
     -fx-background-color: transparent;
-    -fx-border-color: #E8E8ED;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+    -fx-border-color: rgba(0,0,0,0.08);
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
 }
-
 .dark-table .column-header-background {
-    -fx-background-color: #FBFBFD;
+    -fx-background-color: rgba(251,251,253,0.9);
 }
-
 .dark-table .column-header-background .filler {
-    -fx-background-color: #FBFBFD;
+    -fx-background-color: rgba(251,251,253,0.9);
 }
-
 .dark-table .column-header {
     -fx-background-color: transparent;
     -fx-border-width: 0 0 0.5 0;
-    -fx-border-color: #E8E8ED;
+    -fx-border-color: rgba(0,0,0,0.08);
 }
-
 .dark-table .column-header .label {
     -fx-text-fill: #86868B;
     -fx-font-weight: 600;
     -fx-font-size: 12px;
 }
-
 .dark-table .table-row-cell {
     -fx-background-color: #FFFFFF;
     -fx-border-width: 0 0 0.5 0;
-    -fx-border-color: #F0F0F2;
+    -fx-border-color: rgba(0,0,0,0.04);
     -fx-text-fill: #1D1D1F;
 }
-
 .dark-table .table-row-cell:odd {
-    -fx-background-color: #FBFBFD;
+    -fx-background-color: #FAFAFE;
 }
-
 .dark-table .table-row-cell:selected {
-    -fx-background-color: rgba(0, 122, 255, 0.08);
+    -fx-background-color: rgba(0,122,255,0.1);
 }
-
 .dark-table .table-row-cell:hover {
-    -fx-background-color: rgba(0, 122, 255, 0.04);
+    -fx-background-color: rgba(0,122,255,0.05);
 }
-
 .dark-table .table-cell {
     -fx-text-fill: #1D1D1F;
     -fx-font-size: 13px;
     -fx-padding: 8 12;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   LIST VIEWS (macOS source list / sidebar style)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ LIST VIEWS ═══ */
 .dark-list {
     -fx-background-color: transparent;
-    -fx-border-color: #E8E8ED;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+    -fx-border-color: rgba(0,0,0,0.08);
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
     -fx-control-inner-background: transparent;
     -fx-background-insets: 0;
 }
-
 .dark-list .list-cell {
     -fx-background-color: #FFFFFF;
     -fx-text-fill: #1D1D1F;
     -fx-border-width: 0 0 0.5 0;
-    -fx-border-color: #F0F0F2;
+    -fx-border-color: rgba(0,0,0,0.04);
     -fx-padding: 12 16;
     -fx-cursor: hand;
     -fx-font-size: 13px;
 }
-
 .dark-list .list-cell:empty {
     -fx-background-color: transparent;
     -fx-border-width: 0;
 }
-
 .dark-list .list-cell:odd {
-    -fx-background-color: #FBFBFD;
+    -fx-background-color: #FAFAFE;
 }
-
 .dark-list .list-cell:filled:hover {
-    -fx-background-color: rgba(0, 122, 255, 0.04);
+    -fx-background-color: rgba(0,122,255,0.05);
 }
-
 .dark-list .list-cell:filled:selected {
-    -fx-background-color: rgba(0, 122, 255, 0.1);
-    -fx-border-color: #F0F0F2 #F0F0F2 #F0F0F2 #007AFF;
-    -fx-border-width: 0 0 0.5 3;
+    -fx-background-color: rgba(0,122,255,0.12);
+    -fx-background-radius: 8;
     -fx-text-fill: #007AFF;
+    -fx-font-weight: 600;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   SCROLLPANE & SCROLLBARS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ SCROLLBARS (Thin macOS Overlay) ═══ */
 .transparent-scroll {
     -fx-background-color: transparent;
 }
-
 .transparent-scroll .viewport {
     -fx-background-color: transparent;
 }
-
-/* Thin macOS-style scrollbars */
 .scroll-bar {
     -fx-background-color: transparent;
+    -fx-pref-width: 8;
+    -fx-pref-height: 8;
 }
-
 .scroll-bar .track {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-background-radius: 0;
 }
-
 .scroll-bar .thumb {
-    -fx-background-color: rgba(0, 0, 0, 0.15);
+    -fx-background-color: rgba(0,0,0,0.12);
     -fx-background-radius: 10;
     -fx-background-insets: 2;
 }
-
 .scroll-bar .thumb:hover {
-    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-background-color: rgba(0,0,0,0.3);
 }
-
-.scroll-bar .increment-button,
-.scroll-bar .decrement-button {
+.scroll-bar .thumb:pressed {
+    -fx-background-color: rgba(0,0,0,0.4);
+}
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
     -fx-background-color: transparent;
     -fx-padding: 0;
 }
-
-.scroll-bar .increment-arrow,
-.scroll-bar .decrement-arrow {
+.scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
     -fx-shape: "";
     -fx-padding: 0;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   NOTIFICATIONS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ NOTIFICATIONS ═══ */
 .notif-btn {
     -fx-background-color: transparent;
+    -fx-background-radius: 20;
     -fx-cursor: hand;
 }
-
 .notif-btn:hover {
-    -fx-background-color: rgba(0, 0, 0, 0.04);
-    -fx-background-radius: 8;
+    -fx-background-color: rgba(0,0,0,0.06);
+    -fx-background-radius: 20;
 }
-
 .notif-badge {
     -fx-background-color: #FF3B30;
     -fx-text-fill: white;
@@ -548,155 +492,123 @@
     -fx-translate-x: 8;
     -fx-translate-y: -8;
 }
-
-/* ── Notification Panel Items ────────────────────────────────────────────── */
 .notif-item {
     -fx-background-color: #FFFFFF;
-    -fx-border-color: #F0F0F2;
+    -fx-border-color: rgba(0,0,0,0.04);
     -fx-border-width: 0 0 0.5 0;
     -fx-padding: 14 16;
     -fx-cursor: hand;
 }
-
 .notif-item:hover {
-    -fx-background-color: rgba(0, 122, 255, 0.04);
+    -fx-background-color: rgba(0,122,255,0.04);
 }
-
 .notif-item-unread {
-    -fx-background-color: rgba(0, 122, 255, 0.04);
-    -fx-border-color: #F0F0F2 #F0F0F2 #F0F0F2 #007AFF;
+    -fx-background-color: rgba(0,122,255,0.04);
+    -fx-border-color: rgba(0,0,0,0.04) rgba(0,0,0,0.04) rgba(0,0,0,0.04) #007AFF;
     -fx-border-width: 0 0 0.5 3;
     -fx-padding: 14 16 14 13;
 }
-
 .notif-item-unread:hover {
-    -fx-background-color: rgba(0, 122, 255, 0.08);
+    -fx-background-color: rgba(0,122,255,0.08);
 }
-
 .notif-empty-label {
     -fx-text-fill: #86868B;
     -fx-font-size: 15px;
     -fx-padding: 40;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   DATE PICKER (Apple Calendar style)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ DATE PICKER ═══ */
 .date-picker-popup {
     -fx-background-color: #FFFFFF;
-    -fx-border-color: #D2D2D7;
-    -fx-border-radius: 12;
-    -fx-background-radius: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 16, 0, 0, 4);
+    -fx-border-color: rgba(0,0,0,0.12);
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 24, 0, 0, 6);
 }
-
 .date-picker-popup .month-year-pane {
-    -fx-background-color: #FBFBFD;
+    -fx-background-color: rgba(251,251,253,0.95);
     -fx-padding: 8;
 }
-
 .date-picker-popup .spinner .button,
 .date-picker-popup .spinner .left-button,
 .date-picker-popup .spinner .right-button {
     -fx-background-color: transparent;
     -fx-text-fill: #007AFF;
 }
-
 .date-picker-popup .spinner .label {
     -fx-text-fill: #1D1D1F;
     -fx-font-weight: 600;
 }
-
 .date-picker-popup .day-name-cell {
     -fx-text-fill: #86868B;
     -fx-font-size: 11px;
     -fx-font-weight: 600;
 }
-
 .date-picker-popup .day-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #1D1D1F;
 }
-
 .date-picker-popup .day-cell:hover {
-    -fx-background-color: rgba(0, 122, 255, 0.08);
-    -fx-background-radius: 8;
+    -fx-background-color: rgba(0,122,255,0.08);
+    -fx-background-radius: 20;
     -fx-text-fill: #007AFF;
 }
-
 .date-picker-popup .selected {
     -fx-background-color: #007AFF;
-    -fx-background-radius: 8;
+    -fx-background-radius: 20;
     -fx-text-fill: white;
     -fx-font-weight: 600;
 }
-
 .date-picker-popup .today {
-    -fx-background-color: rgba(0, 122, 255, 0.08);
-    -fx-background-radius: 8;
+    -fx-background-color: rgba(0,122,255,0.1);
+    -fx-background-radius: 20;
     -fx-text-fill: #007AFF;
     -fx-font-weight: 600;
 }
-
-.date-picker-popup .next-month,
-.date-picker-popup .previous-month {
+.date-picker-popup .next-month, .date-picker-popup .previous-month {
     -fx-text-fill: #AEAEB2;
 }
-
 .date-picker-popup .week-number-cell {
     -fx-text-fill: #AEAEB2;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   PROGRESS INDICATOR (Apple spinner)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ PROGRESS INDICATOR ═══ */
 .progress-indicator .indicator {
     -fx-border-color: transparent;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   TOOLTIP
-   ═══════════════════════════════════════════════════════════════════════════ */
-
+/* ═══ TOOLTIP ═══ */
 .tooltip {
-    -fx-background-color: rgba(29, 29, 31, 0.85);
+    -fx-background-color: rgba(29,29,31,0.9);
     -fx-text-fill: #FFFFFF;
-    -fx-background-radius: 6;
-    -fx-padding: 6 10;
-    -fx-font-size: 12px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   CONTEXT MENU / POPUP (macOS dropdown)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.context-menu {
-    -fx-background-color: #FFFFFF;
-    -fx-border-color: #D2D2D7;
-    -fx-border-radius: 8;
     -fx-background-radius: 8;
-    -fx-padding: 4 0;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 12, 0, 0, 3);
+    -fx-padding: 6 12;
+    -fx-font-size: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 2);
 }
 
+/* ═══ CONTEXT MENU ═══ */
+.context-menu {
+    -fx-background-color: rgba(255,255,255,0.95);
+    -fx-border-color: rgba(0,0,0,0.1);
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 4 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 4);
+}
 .menu-item {
     -fx-background-color: transparent;
     -fx-padding: 6 16;
+    -fx-background-radius: 6;
 }
-
-.menu-item:hover,
-.menu-item:focused {
+.menu-item:hover, .menu-item:focused {
     -fx-background-color: #007AFF;
+    -fx-background-radius: 6;
 }
-
 .menu-item .label {
     -fx-text-fill: #1D1D1F;
     -fx-font-size: 13px;
 }
-
-.menu-item:hover .label,
-.menu-item:focused .label {
+.menu-item:hover .label, .menu-item:focused .label {
     -fx-text-fill: #FFFFFF;
 }

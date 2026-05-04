@@ -3,6 +3,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
+<?import javafx.scene.image.*?>
 
 <StackPane xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.fyp.controller.LoginController"
@@ -14,16 +15,18 @@
         <!-- Glass card -->
         <VBox styleClass="login-card" alignment="CENTER" spacing="20" maxWidth="440">
             <!-- Logo / Title -->
-            <VBox alignment="CENTER" spacing="6">
-                <Label text="FYP" styleClass="login-logo"/>
-                <Label text="Management Platform" styleClass="login-subtitle"/>
+            <VBox alignment="CENTER" spacing="8">
+                <ImageView fitWidth="72" fitHeight="72" preserveRatio="true">
+                    <image><Image url="@/images/app-icon.png"/></image>
+                </ImageView>
+                <Label text="FYP Nexus" styleClass="login-logo"/>
                 <Label text="FAST NUCES Peshawar" styleClass="login-university"/>
             </VBox>
 
             <Separator styleClass="card-separator"/>
 
             <!-- Error label -->
-            <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="360"/>
+            <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" maxWidth="360" visible="false" managed="false"/>
 
             <!-- Email -->
             <VBox spacing="6" maxWidth="360">
